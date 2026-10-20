@@ -1,0 +1,61 @@
+feature,area,priority,original,clone,notes
+Conectar conta Instagram profissional,canais,must,yes,partial,token colado à mão; falta login OAuth com a Meta
+Conectar página do Messenger,canais,must,yes,partial,token colado à mão
+Conectar WhatsApp Cloud API,canais,must,yes,partial,phone number ID + token colado à mão
+Gatilho de palavra-chave na DM (igual / contém),gatilhos,must,yes,yes,
+Palavra-chave: começa com / palavra inteira / excluir palavras,gatilhos,should,yes,no,
+Gatilho de comentário em post/reel com filtro de palavra e de post,gatilhos,must,yes,partial,falta lista de exclusão e opção "próximo post"
+Resposta privada (DM) ao comentário,gatilhos,must,yes,yes,
+Resposta pública ao comentário com variações aleatórias,gatilhos,should,yes,partial,uma resposta só; sem rotação
+Gatilho de resposta ao story,gatilhos,must,yes,no,
+Gatilho de menção no story,gatilhos,should,yes,no,
+Gatilho de comentário em live,gatilhos,could,yes,no,
+Gatilho de comentário no Facebook,gatilhos,should,yes,yes,
+Mensagem de boas-vindas (primeiro contato),gatilhos,must,yes,yes,
+Resposta padrão quando nada casa,gatilhos,must,yes,yes,
+Ref URL (link ig.me / m.me / wa.me que abre um fluxo),gatilhos,should,yes,no,
+Ice breakers e menu fixo,gatilhos,could,yes,no,
+Construtor visual em canvas (arrastar e ligar blocos),construtor,must,yes,partial,editor em lista com "ir para"; sem canvas
+Bloco mensagem de texto,construtor,must,yes,yes,
+Bloco imagem / vídeo / arquivo,construtor,must,yes,no,
+Botões e respostas rápidas,construtor,must,yes,yes,
+Botão de link (URL),construtor,must,yes,no,
+Bloco esperar resposta e salvar em campo,construtor,must,yes,partial,sem validação (email / telefone / número)
+Atraso (smart delay),construtor,must,yes,yes,
+Condição por tag,construtor,must,yes,yes,
+Condição por campo (igual / contém / maior que),construtor,should,yes,no,
+Ações: adicionar/remover tag e definir campo,construtor,must,yes,yes,
+Iniciar outra automação,construtor,should,yes,no,goto só dentro do mesmo fluxo
+Randomizador (teste A/B),construtor,could,yes,no,
+Bloco de requisição HTTP externa,construtor,should,yes,no,
+Efeito digitando entre mensagens,construtor,could,yes,no,
+Variáveis nas mensagens (nome e campos),construtor,must,yes,yes,
+Respeitar janela de 24h,regras meta,must,yes,yes,
+Janela de 7 dias para atendente humano,regras meta,should,yes,no,
+Templates do WhatsApp (fora da janela),regras meta,must,yes,no,
+Inbox unificada com lista de conversas e não lidas,inbox,must,yes,partial,só a conversa por contato; sem lista de conversas abertas
+Pausar automação e assumir conversa (atendente),inbox,must,yes,no,
+Resposta manual pelo painel,inbox,must,yes,yes,
+Equipe com vários atendentes e distribuição automática,inbox,could,yes,no,
+Lista de contatos com tags e campos e filtro,contatos,must,yes,yes,
+Segmentos salvos,contatos,should,yes,no,
+Unir contato entre canais por email/telefone,contatos,could,yes,no,
+Disparos em massa (broadcast) para segmento,disparos,must,yes,no,
+Sequências (drip),disparos,should,yes,no,
+Regras por evento (ex.: tag adicionada),disparos,should,yes,no,
+Métricas por fluxo (envios / cliques),análise,must,yes,no,
+Painel de contatos ao longo do tempo,análise,should,yes,partial,só totais na tela inicial
+Webhooks de saída / Zapier / Make,integrações,should,yes,no,
+Google Sheets,integrações,could,yes,no,
+API pública com chave,integrações,could,yes,no,
+Contas de usuário com login e equipe,conta,must,yes,partial,senha única do painel
+Vários bots/workspaces por conta,conta,could,yes,no,
+Galeria de modelos de fluxo,conta,could,yes,no,
+Passo de IA que conversa e preenche campos,ia,should,yes,no,
+Gatilho por intenção (IA) sem palavra-chave,ia,could,yes,no,
+Canais Telegram / TikTok / SMS / email,canais,could,yes,no,
+App mobile do inbox,inbox,could,yes,no,
+Gatilho por anúncio (click-to-DM / JSON ads),gatilhos,could,yes,no,
+Follow to DM,gatilhos,could,yes,skip,beta liberado pela Meta conta a conta; não depende do código
+App Store de apps de terceiros,integrações,could,yes,skip,é a rede de parceiros deles
+Comunidade e criadores de templates,conta,could,yes,skip,é a rede de usuários deles
