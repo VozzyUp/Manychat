@@ -1,61 +1,154 @@
-feature,area,priority,original,clone,notes
-Conectar conta Instagram profissional,canais,must,yes,partial,token colado à mão; falta login OAuth com a Meta
-Conectar página do Messenger,canais,must,yes,partial,token colado à mão
-Conectar WhatsApp Cloud API,canais,must,yes,partial,phone number ID + token colado à mão
-Gatilho de palavra-chave na DM (igual / contém),gatilhos,must,yes,yes,
-Palavra-chave: começa com / palavra inteira / excluir palavras,gatilhos,should,yes,no,
-Gatilho de comentário em post/reel com filtro de palavra e de post,gatilhos,must,yes,partial,falta lista de exclusão e opção "próximo post"
-Resposta privada (DM) ao comentário,gatilhos,must,yes,yes,
-Resposta pública ao comentário com variações aleatórias,gatilhos,should,yes,partial,uma resposta só; sem rotação
-Gatilho de resposta ao story,gatilhos,must,yes,no,
-Gatilho de menção no story,gatilhos,should,yes,no,
-Gatilho de comentário em live,gatilhos,could,yes,no,
-Gatilho de comentário no Facebook,gatilhos,should,yes,yes,
-Mensagem de boas-vindas (primeiro contato),gatilhos,must,yes,yes,
-Resposta padrão quando nada casa,gatilhos,must,yes,yes,
-Ref URL (link ig.me / m.me / wa.me que abre um fluxo),gatilhos,should,yes,no,
-Ice breakers e menu fixo,gatilhos,could,yes,no,
-Construtor visual em canvas (arrastar e ligar blocos),construtor,must,yes,partial,editor em lista com "ir para"; sem canvas
-Bloco mensagem de texto,construtor,must,yes,yes,
-Bloco imagem / vídeo / arquivo,construtor,must,yes,no,
-Botões e respostas rápidas,construtor,must,yes,yes,
-Botão de link (URL),construtor,must,yes,no,
-Bloco esperar resposta e salvar em campo,construtor,must,yes,partial,sem validação (email / telefone / número)
-Atraso (smart delay),construtor,must,yes,yes,
-Condição por tag,construtor,must,yes,yes,
-Condição por campo (igual / contém / maior que),construtor,should,yes,no,
-Ações: adicionar/remover tag e definir campo,construtor,must,yes,yes,
-Iniciar outra automação,construtor,should,yes,no,goto só dentro do mesmo fluxo
-Randomizador (teste A/B),construtor,could,yes,no,
-Bloco de requisição HTTP externa,construtor,should,yes,no,
-Efeito digitando entre mensagens,construtor,could,yes,no,
-Variáveis nas mensagens (nome e campos),construtor,must,yes,yes,
-Respeitar janela de 24h,regras meta,must,yes,yes,
-Janela de 7 dias para atendente humano,regras meta,should,yes,no,
-Templates do WhatsApp (fora da janela),regras meta,must,yes,no,
-Inbox unificada com lista de conversas e não lidas,inbox,must,yes,partial,só a conversa por contato; sem lista de conversas abertas
-Pausar automação e assumir conversa (atendente),inbox,must,yes,no,
-Resposta manual pelo painel,inbox,must,yes,yes,
-Equipe com vários atendentes e distribuição automática,inbox,could,yes,no,
-Lista de contatos com tags e campos e filtro,contatos,must,yes,yes,
-Segmentos salvos,contatos,should,yes,no,
-Unir contato entre canais por email/telefone,contatos,could,yes,no,
-Disparos em massa (broadcast) para segmento,disparos,must,yes,no,
-Sequências (drip),disparos,should,yes,no,
-Regras por evento (ex.: tag adicionada),disparos,should,yes,no,
-Métricas por fluxo (envios / cliques),análise,must,yes,no,
-Painel de contatos ao longo do tempo,análise,should,yes,partial,só totais na tela inicial
-Webhooks de saída / Zapier / Make,integrações,should,yes,no,
-Google Sheets,integrações,could,yes,no,
-API pública com chave,integrações,could,yes,no,
-Contas de usuário com login e equipe,conta,must,yes,partial,senha única do painel
-Vários bots/workspaces por conta,conta,could,yes,no,
-Galeria de modelos de fluxo,conta,could,yes,no,
-Passo de IA que conversa e preenche campos,ia,should,yes,no,
-Gatilho por intenção (IA) sem palavra-chave,ia,could,yes,no,
-Canais Telegram / TikTok / SMS / email,canais,could,yes,no,
-App mobile do inbox,inbox,could,yes,no,
-Gatilho por anúncio (click-to-DM / JSON ads),gatilhos,could,yes,no,
-Follow to DM,gatilhos,could,yes,skip,beta liberado pela Meta conta a conta; não depende do código
-App Store de apps de terceiros,integrações,could,yes,skip,é a rede de parceiros deles
-Comunidade e criadores de templates,conta,could,yes,skip,é a rede de usuários deles
+feature,area,priority,original,clone,notes,escopo,fase
+Monorepo pnpm + Turborepo com TypeScript strict,infra,must,yes,no,,2,F1.1
+Lint + bloqueio de import entre módulos,infra,must,yes,no,modules/* só importam core/shared,3,F1.1
+CI no GitHub Actions (lint typecheck testes),infra,must,yes,no,,2,F1.1
+Ambiente local com Supabase CLI + Redis,infra,must,yes,no,,11,F1.1
+Parceiros tenants e membros com papéis,multiempresa,must,yes,no,owner admin manager quality operator viewer,4.1,F1.2
+RLS em toda tabela de negócio via tenant_members,multiempresa,must,yes,no,,4.1,F1.2
+Teste automatizado de RLS por tabela (A não lê B),multiempresa,must,yes,no,,10,F1.2
+Helper withTenant obrigatório no worker,multiempresa,must,yes,no,,4.1,F1.2
+Módulos ativos por tenant (tenant_modules),multiempresa,must,yes,no,,4.1,F1.2
+Login e-mail + senha (S01),painel,must,yes,no,,2,F1.3
+2FA opcional (TOTP),painel,should,yes,no,Supabase Auth MFA,2,F1.3
+Troca de tenant no painel (S02 + seletor),painel,must,yes,no,,4.1,F1.3
+Layout white-label (nome logo cores por tenant/parceiro),painel,must,yes,no,,1,F1.3
+Menu só com módulos ativos,painel,must,yes,no,,4.1,F1.3
+Webhook WhatsApp com validação X-Hub-Signature-256,whatsapp,must,yes,no,,4.2,F1.4
+Webhook responde 200 e enfileira (inbound-messages),whatsapp,must,yes,no,< 1 s,4.2,F1.4
+Idempotência por wamid,whatsapp,must,yes,no,,4.2,F1.4
+Tipos: texto áudio imagem documento localização interativo,whatsapp,must,yes,no,,4.2,F1.4
+Download de mídia para Storage tenant/yyyy/mm/wamid.ext,whatsapp,must,yes,no,,4.2,F1.4
+Envio de texto dentro da janela de 24 h,whatsapp,must,yes,no,,4.2,F1.4
+Envio de template aprovado fora da janela,whatsapp,must,yes,no,,4.2,F1.4
+Status de entrega sent/delivered/read/failed,whatsapp,must,yes,no,,4.2,F1.4
+Tokens de WhatsApp criptografados no banco,whatsapp,must,yes,no,AES-256-GCM com ENCRYPTION_KEY,4.2,F1.4
+Cadastro de números de WhatsApp (S21),whatsapp,must,yes,no,,4.2,F1.4
+Templates no painel com categoria e status (S22),whatsapp,must,yes,no,,4.2,F1.4
+Resolver tenant pelo phone_number_id,roteamento,must,yes,no,,4.3,F1.5
+Contatos com kind driver/patient/staff/unknown (S06 S07),roteamento,must,yes,no,,4.3,F1.5
+Roteamento driver→Log patient/unknown→Labs,roteamento,must,yes,no,,4.3,F1.5
+Classificador rápido para staff (LLM_MODEL_FAST),roteamento,must,yes,no,,4.3,F1.5
+default_module por número,roteamento,must,yes,no,,4.3,F1.5
+Handoff aberto não passa pela IA,roteamento,must,yes,no,,4.3,F1.5
+Conversas e mensagens no painel (S04 S05),painel,must,yes,no,,4.6,F1.5
+AgentDefinition em TypeScript,agentes,must,yes,no,,4.4,F1.6
+Loop de tool use com maxTurns,agentes,must,yes,no,,4.4,F1.6
+Contexto: tenant + últimas N mensagens + conversation_state,agentes,must,yes,no,,4.4,F1.6
+Guardrails obrigatórios no system prompt,agentes,must,yes,no,,4.4,F1.6
+ai_runs com tokens custo latência resultado,auditoria,must,yes,no,,4.8,F1.6
+ai_tool_calls por tool,auditoria,must,yes,no,,4.8,F1.6
+Tools do núcleo get_contact_profile send_template,agentes,must,yes,no,,4.4,F1.6
+Prompt caching nos system prompts,agentes,should,yes,no,,10,F1.6
+Modelos só por env (AGENT FAST VISION),agentes,must,yes,no,,2,F1.6
+Upload de documento PDF DOCX TXT MD (S10),documentos,must,yes,no,,4.5,F1.7
+Coleções e metadados (código responsável vigência revisão tags),documentos,must,yes,no,,4.5,F1.7
+Status rascunho→em_revisao→aprovado→obsoleto,documentos,must,yes,no,,4.5,F1.7
+Versões com obsolescência automática,documentos,must,yes,no,,4.5,F1.7
+Ingestão: extração pdf-parse/mammoth,documentos,must,yes,no,,4.5,F1.7
+OCR com modelo de visão para PDF escaneado,documentos,must,yes,no,,4.5,F1.7
+Chunking por seção 500–800 tokens overlap 80,documentos,must,yes,no,,4.5,F1.7
+Embeddings com provedor configurável,documentos,must,yes,no,,4.5,F1.7
+Resumo curto do documento,documentos,must,yes,no,,4.5,F1.7
+Lista e detalhe de documentos (S08 S09),documentos,must,yes,no,,4.5,F1.7
+search_knowledge híbrida (pgvector + tsvector pt + RRF),rag,must,yes,no,,4.5,F1.8
+Filtro por tenant escopo e status aprovado,rag,must,yes,no,,4.5,F1.8
+Top 6 com limiar mínimo (vazio força handoff),rag,must,yes,no,,4.5,F1.8
+Validação de citação (chunk_id obrigatório),rag,must,yes,no,,4.4,F1.8
+ai_citations,auditoria,must,yes,no,,4.8,F1.8
+Formato de citação no WhatsApp,rag,must,yes,no,📄 Fonte: título seção (vN),4.4,F1.8
+Tela Testar a base (S11),rag,must,yes,no,,4.5,F1.8
+Perguntas sem resposta (S12),rag,must,yes,no,,4.5,F1.8
+Transcrição de áudio via Whisper (Groq),multimodal,must,yes,no,,4.6,F1.9
+Transcrição gravada e mostrada no painel,multimodal,must,yes,no,,4.6,F1.9
+Visão com saída zod + confidence,multimodal,must,yes,no,,4.6,F1.9
+PDF recebido no WhatsApp extraído ou salvo como evidência,multimodal,must,yes,no,,4.6,F1.9
+handoff_to_human abre conversa no Chatwoot com resumo,handoff,must,yes,no,,4.7,F1.10
+Mensagens do Chatwoot saem pelo WhatsApp,handoff,must,yes,no,,4.7,F1.10
+Resolver no Chatwoot devolve para a IA,handoff,must,yes,no,,4.7,F1.10
+Caixa de atendimento própria no painel,handoff,could,yes,no,ETAPA 2,4.7,E2
+audit_log de toda ação no painel (antes/depois),auditoria,must,yes,no,trigger no banco,4.8,F1.11
+Logs imutáveis para usuários,auditoria,must,yes,no,,4.8,F1.11
+Exportação CSV por período (S17),auditoria,must,yes,no,,4.8,F1.11
+Não conformidades com ciclo e ações (S13 S14),ncs,must,yes,no,,7.2,F1.11
+Tool create_nonconformity,ncs,must,yes,no,,4.4,F1.11
+Evidências vinculadas a entidades (S16),evidencias,must,yes,no,,7.3,F1.11
+Tool attach_evidence,evidencias,must,yes,no,,4.4,F1.11
+Alertas com tratamento (S15),alertas,must,yes,no,,5.3,F1.11
+Painel inicial do tenant (S03),paineis,must,yes,no,,4.9,F1.11
+Gerador de relatórios PDF/CSV (S18),paineis,must,yes,no,,4.9,F1.12
+Painel do parceiro: uso e custo por tenant (S24 S25),paineis,must,yes,no,,4.9,F1.12
+Job: alertas de vencimento,jobs,must,yes,no,,4.10,F1.11
+Job: relatórios periódicos,jobs,must,yes,no,,4.10,F1.12
+Job: limpeza de estado de conversa,jobs,must,yes,no,,4.10,F1.5
+Job: consolidação diária de custos,jobs,must,yes,no,,4.10,F1.6
+Log: cadastros motoristas veículos embarcadores destinos (L04),log,must,yes,no,,5.1,F1.12
+Log: tipos de carga com faixa tolerância e POP,log,must,yes,no,,5.1,F1.12
+Log: entregas com paradas e janela (L01 L03),log,must,yes,no,,5.1,F1.12
+Log: início da rota (iniciar ou template),log,must,yes,no,,5.2,F1.12
+Log: checklist de origem por áudio com cobrança do que falta,log,must,yes,no,,5.2,F1.12
+Log: read_thermometer com pedido de nova foto,log,must,yes,no,confidence < 0.8,5.2,F1.12
+Log: fora da faixa → alerta + template à Qualidade + NC rascunho,log,must,yes,no,< 30 s,5.2,F1.12
+Log: orientação só pelo POP de desvio com citação,log,must,yes,no,,5.2,F1.12
+Log: ocorrências com NC e evidências,log,must,yes,no,,5.2,F1.12
+Log: entrega com extração do comprovante,log,must,yes,no,,5.2,F1.12
+Log: localização nos eventos de temperatura e entrega,log,must,yes,no,,5.2,F1.12
+Log: linha do tempo da entrega (L02),log,must,yes,no,,5.3,F1.12
+Log: relatório PDF por entrega,log,must,yes,no,,5.3,F1.12
+Log: indicadores (L05),log,must,yes,no,,5.3,F1.12
+Log: evals + homologação com fotos e áudios reais,log,must,yes,no,40 fotos ≥ 95%,5.6,F1.13
+Log: relatório automático por e-mail ao embarcador,log,could,yes,no,ETAPA 2,5.4,E2
+Log: gráfico de temperatura por rota,log,could,yes,no,ETAPA 2,5.4,E2
+Log: previsão de risco por rota/horário,log,could,yes,no,ETAPA 2,5.4,E2
+Log: integração com TMS,log,could,yes,skip,orçamento à parte,5.4,E2
+Labs: catálogo de exames e unidades (B03),labs,must,yes,no,,6.1,F2
+Labs: pacientes com consentimento LGPD (B04),labs,must,yes,no,,6.1,F2
+Labs: boas-vindas e consentimento antes de dados pessoais,labs,must,yes,no,,6.2,F2
+Labs: dúvidas de preparo com fonte ou handoff,labs,must,yes,no,,6.2,F2
+Labs: read_medical_order com confirmação,labs,must,yes,no,≥ 90%,6.2,F2
+Labs: agendamento simples (link ou solicitação B02),labs,must,yes,no,,6.2,F2
+Labs: lembrete 24–48 h com preparo,labs,must,yes,no,,6.2,F2
+Labs: sintoma grave → resposta padrão + handoff,labs,must,yes,no,,6.2,F2
+Labs: amostras e eventos (B05 B06),labs,must,yes,no,,6.3,F2
+Labs: evento de amostra pelo WhatsApp da equipe,labs,must,yes,no,,6.3,F2
+Labs: painel (B01),labs,must,yes,no,,6.4,F2
+Labs: evals,labs,must,yes,no,,6.6,F2
+Labs: agenda própria,labs,could,yes,no,ETAPA 2,6.5,E2
+Labs: integração com LIS,labs,could,yes,skip,orçamento à parte,6.5,E2
+Labs: biobanco e cadeia de custódia,labs,could,yes,no,ETAPA 2,6.5,E2
+Consult: copiloto por WhatsApp e painel (C01),consult,must,yes,no,,7.1,F3
+Consult: análise de foto contra trechos de norma,consult,must,yes,no,apoio à inspeção não laudo,7.1,F3
+Consult: NC por áudio texto ou foto com confirmação,consult,must,yes,no,,7.2,F3
+Consult: notificação à Qualidade,consult,must,yes,no,,7.2,F3
+Consult: auditorias com requisitos e evidências (C02),consult,must,yes,no,,7.3,F3
+Consult: busca de evidência por requisito,consult,must,yes,no,,7.3,F3
+Consult: quiz gerado de documento aprovado (C03),consult,must,yes,no,,7.4,F3
+Consult: envio por WhatsApp interativo ou link (C05),consult,must,yes,no,,7.4,F3
+Consult: tentativas notas e pendentes (C04),consult,must,yes,no,,7.4,F3
+Consult: evals,consult,must,yes,no,,7.6,F3
+Consult: monitoramento normativo,consult,could,yes,no,ETAPA 2,7.5,E2
+ADM: solicitações por WhatsApp ou painel (A01 A02),adm,must,yes,no,,8.1,F4
+ADM: classificação de setor e tipo com coleta de campos,adm,must,yes,no,≥ 90%,8.1,F4
+ADM: SLA por tipo e status com atualizações ao solicitante,adm,must,yes,no,,8.1,F4
+ADM: consulta de status pelo WhatsApp,adm,must,yes,no,,8.1,F4
+ADM: tipos e SLAs configuráveis (A03),adm,must,yes,no,,8.1,F4
+ADM: contrato com extração e revisão humana (A04 A05),adm,must,yes,no,≥ 80% dos campos,8.2,F4
+ADM: alertas de vencimento 90/60/30,adm,must,yes,no,,8.2,F4
+ADM: perguntas sobre contrato com citação da cláusula,adm,must,yes,no,,8.2,F4
+ADM: agentes por setor com escopo de base,adm,must,yes,no,,8.3,F4
+ADM: relatório semanal e painel executivo (A06),adm,must,yes,no,,8.4,F4
+ADM: evals,adm,must,yes,no,,8.6,F4
+ADM: indicadores preditivos,adm,could,yes,no,ETAPA 2,8.5,E2
+ADM: integração com ERP,adm,could,yes,skip,orçamento à parte,8.5,E2
+Retry exponencial e dead-letter queue,confiabilidade,should,yes,no,,10,F1.4
+Resposta da IA p95 < 15 s texto e < 25 s mídia,confiabilidade,should,yes,no,,10,F1.13
+Backup diário 30 dias + teste de restauração mensal,confiabilidade,should,yes,no,runbook,10,F1.13
+Buckets privados com URL assinada curta,lgpd,must,yes,no,,10,F1.4
+Retenção configurável por tenant,lgpd,should,yes,no,,10,F1.11
+Exclusão/anonimização de contato a pedido,lgpd,must,yes,no,,10,F1.11
+Exportação completa do tenant (JSON + arquivos),lgpd,should,yes,no,,10,F1.12
+Minimização de dados enviados à IA,lgpd,must,yes,no,,10,F1.6
+Registro de custo de IA e WhatsApp por tenant,custos,must,yes,no,,10,F1.6
+Logs pino com tenant_id conversation_id job_id,observabilidade,must,yes,no,,2,F1.1
+Sentry para erros,observabilidade,should,yes,no,,2,F1.1
+Deploy Docker + Traefik em VPS,infra,should,yes,no,,2,F1.13
+Endpoint de saúde para api e worker,infra,should,no,no,adicionado para o Traefik e monitoração,—,F1.1

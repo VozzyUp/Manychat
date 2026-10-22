@@ -1,6 +1,15 @@
 node_modules
 .next
+.turbo
+dist
+coverage
 .env
-.env.local
+.env.*
+!.env.example
 *.tsbuildinfo
 next-env.d.ts
+supabase/.temp
+supabase/.branches
+playwright-report
+test-results
+evals/**/results
