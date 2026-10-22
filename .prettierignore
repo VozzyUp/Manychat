@@ -1,0 +1,9 @@
+pnpm-lock.yaml
+.next
+dist
+coverage
+node_modules
+.turbo
+supabase/.temp
+*.md
+.claude

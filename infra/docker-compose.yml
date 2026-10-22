@@ -1,0 +1,21 @@
+# Local development services. Postgres, Auth and Storage come from the Supabase CLI (`supabase start`).
+# Production compose (api, worker, web behind Traefik) lands in build step 1.13.
+name: nurion-hub
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    # BullMQ needs noeviction: an evicted key would silently lose a job.
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  redis-data:
