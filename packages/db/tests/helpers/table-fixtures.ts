@@ -44,6 +44,14 @@ const message = async (db: Db, tenantId: string) =>
     [tenantId, await conversation(db, tenantId), `wamid.${randomUUID()}`],
   );
 
+const aiRun = async (db: Db, tenantId: string) =>
+  insertReturningId(
+    db,
+    `insert into ai_runs (tenant_id, conversation_id, agent_key, model, outcome)
+     values ($1, $2, 'log.driver', 'test-model', 'answered') returning id`,
+    [tenantId, await conversation(db, tenantId)],
+  );
+
 export const TABLE_FIXTURES: Record<
   string,
   (db: Db, world: World, tenantId: string) => Promise<unknown>
@@ -84,6 +92,18 @@ export const TABLE_FIXTURES: Record<
       `insert into handoffs (tenant_id, conversation_id, reason) values ($1, $2, 'no_knowledge')`,
       [tenantId, await conversation(db, tenantId)],
     ),
+  ai_runs: async (db, _world, tenantId) => aiRun(db, tenantId),
+  ai_tool_calls: async (db, _world, tenantId) =>
+    db.query(`insert into ai_tool_calls (tenant_id, ai_run_id, tool) values ($1, $2, 'reply')`, [
+      tenantId,
+      await aiRun(db, tenantId),
+    ]),
+  ai_citations: async (db, _world, tenantId) =>
+    db.query(`insert into ai_citations (tenant_id, ai_run_id, chunk_id) values ($1, $2, $3)`, [
+      tenantId,
+      await aiRun(db, tenantId),
+      randomUUID(),
+    ]),
   audit_log: async (db, _world, tenantId) =>
     db.query(
       `insert into audit_log (tenant_id, action, entity, entity_id) values ($1, 'insert', 'test', $2)`,

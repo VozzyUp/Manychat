@@ -145,6 +145,22 @@ sequenceDiagram
 - Modelos vêm de `LLM_MODEL_AGENT`, `LLM_MODEL_FAST`, `LLM_MODEL_VISION`. Nunca de uma string no código.
 - Toda chamada grava `ai_runs`; toda tool, `ai_tool_calls`; toda fonte, `ai_citations`.
 
+### Como o motor roda um turno (passo 1.6)
+
+1. Contexto: nome da empresa, contato, hora local e as últimas 20 mensagens (só texto; áudio entra como
+   transcrição, imagem como aviso).
+2. Prompt em dois blocos: guardrails + prompt do agente (com ponto de cache) e, depois dele, a parte que muda
+   por conversa. Ferramentas em ordem fixa, para não invalidar o cache.
+3. Loop manual (`maxTurns`): cada `tool_use` é validado por zod e executado com `withTenant`; erro de
+   ferramenta volta ao modelo como `is_error`.
+4. Só `reply` e `handoff_to_human` encerram. `reply` na mesma chamada de outras ferramentas é recusada (não
+   pode ter usado resultados que ainda não viu). Texto solto recebe uma cobrança e, na segunda vez, vira handoff.
+5. Antes de qualquer envio, grava `ai_runs`/`ai_tool_calls`/`ai_citations`; só depois enfileira a resposta ou
+   abre o handoff. Falha de auditoria não deixa resposta sem registro.
+6. Recusa do modelo, `max_tokens`, `maxTurns` e erro técnico terminam em handoff com motivo.
+
+O custo vem de `LLM_PRICING` (JSON, USD por milhão de tokens, por id de modelo); modelo sem preço grava custo 0.
+
 ## Documentos e RAG
 
 ```mermaid

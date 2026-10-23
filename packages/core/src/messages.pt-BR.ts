@@ -14,6 +14,8 @@ export const coreMessages = {
   } satisfies Record<ModuleKey, { title: string; description: string }>,
   unidentified:
     'Olá! Não encontrei seu cadastro neste número. Vou passar sua mensagem para a nossa equipe, que responde assim que possível.',
+  handoff:
+    'Entendi. Vou passar sua conversa para uma pessoa da nossa equipe, que responde assim que possível.',
   noModule:
     'Olá! Este número ainda não tem atendimento automático para o seu caso. Vou passar sua mensagem para a nossa equipe.',
 } as const;

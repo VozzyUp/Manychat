@@ -1,3 +1,4 @@
+export * from './agents';
 export * from './channel';
 export * from './conversation';
 export * from './handoff';

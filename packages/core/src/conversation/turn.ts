@@ -34,6 +34,7 @@ export type AgentTurnInput = {
 
 export type StaffIntentClassifier = (input: {
   tenantId: string;
+  conversationId: string;
   text: string;
   modules: ModuleKey[];
 }) => Promise<{ module: ModuleKey; confidence: number } | null>;
@@ -42,7 +43,7 @@ export type TurnContext = ChannelContext & {
   registry: ModuleRegistry;
   enqueueOutbound: EnqueueOutbound;
   classifyStaffIntent?: StaffIntentClassifier;
-  runAgent?: (input: AgentTurnInput) => Promise<void>;
+  runAgent?: (input: AgentTurnInput) => Promise<unknown>;
   /** How long a conversation keeps its module before routing again (default 2 h). */
   stickyMinutes?: number;
 };
@@ -140,7 +141,12 @@ export async function processConversationTurn(ctx: TurnContext, job: TurnJob): P
     const intent =
       ctx.classifyStaffIntent && text
         ? await ctx
-            .classifyStaffIntent({ tenantId: job.tenantId, text, modules: decision.candidates })
+            .classifyStaffIntent({
+              tenantId: job.tenantId,
+              conversationId: job.conversationId,
+              text,
+              modules: decision.candidates,
+            })
             .catch((err: unknown) => {
               ctx.logger.warn(
                 { err, tenant_id: job.tenantId, conversation_id: job.conversationId },
@@ -209,7 +215,18 @@ export async function processConversationTurn(ctx: TurnContext, job: TurnJob): P
         })
         .eq('id', job.conversationId);
       if (update.error) throw new Error(update.error.message);
-      await ctx.runAgent?.({
+      // Without an agent engine (no AI key configured) the conversation goes to the human inbox.
+      const run =
+        ctx.runAgent ??
+        (async () => {
+          const { created } = await openHandoff(tdb, {
+            conversationId: job.conversationId,
+            reason: 'other',
+            openedBy: 'system',
+          });
+          if (created) await say({ kind: 'text', text: coreMessages.noModule });
+        });
+      await run({
         tenantId: job.tenantId,
         conversationId: job.conversationId,
         contactId: contact.id,

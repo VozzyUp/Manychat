@@ -38,6 +38,8 @@ configurável por tenant, e a linha fica aqui até ser confirmada.
 | P23 | Hospedagem: provedor da VPS, domínios do painel/API, onde roda o Chatwoot | §2 infra | passo 1.13 | — |
 | P24 | Embarcador recebe o relatório PDF como? (download no painel no MVP) | §5.3 | passo 1.12 | gestor baixa e envia; e-mail automático é ETAPA 2 |
 | P25 | Papéis são hierárquicos (owner > admin > manager > quality > operator > viewer) ou há permissões exclusivas (ex.: só Qualidade aprova POP)? | §4.1 | passos 1.7 e 1.11 | hierárquico: quem está acima herda o de baixo |
+| P26 | Tenant suspenso ou módulo desligado: a IA deve responder o quê? | passo 1.6 | hoje responde normalmente; falta decidir entre silêncio, aviso fixo ou handoff |
+| P27 | Retenção do texto das mensagens enviadas ao modelo e de `ai_tool_calls.args` (podem conter dados pessoais) | passo 1.6 / LGPD | mantidos enquanto o contato não for anonimizado; prazo por tenant a definir |
 
 ## Decididas
 

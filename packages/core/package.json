@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.1.0",
     "@nurion/db": "workspace:*",
     "@nurion/shared": "workspace:*",
     "@nurion/whatsapp": "workspace:*",

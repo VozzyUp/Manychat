@@ -1,10 +1,15 @@
 import {
+  createStaffClassifier,
   DEFAULT_JOB_OPTIONS,
   PermanentJobError,
   processConversationTurn,
   processInboundWebhook,
   processOutbound,
   QUEUES,
+  runAgentTurn,
+  type LlmClient,
+  type ModelNames,
+  type Pricing,
   type OutboundJob,
   type TurnContext,
   type TurnJob,
@@ -23,6 +28,8 @@ export type WorkerSetup = {
   prefix: string;
   /** Turn context without the outbound queue (built here). */
   ctx: Omit<TurnContext, 'enqueueOutbound'>;
+  /** The model side of the agent engine. Without it, conversations that need an agent go to a human. */
+  llm?: { client: LlmClient; models: ModelNames; pricing: Pricing };
   logger: Logger;
   concurrency: number;
   reportError?: (error: unknown, tags: Record<string, string | undefined>) => void;
@@ -65,6 +72,18 @@ export async function startWorkers(setup: WorkerSetup) {
       });
     },
   };
+  if (setup.llm) {
+    const { client, models, pricing } = setup.llm;
+    ctx.runAgent = (input) =>
+      runAgentTurn({ ...ctx, llm: client, models, pricing, registry: ctx.registry }, input);
+    ctx.classifyStaffIntent = createStaffClassifier({
+      llm: client,
+      model: models.fast,
+      pricing,
+      db: ctx.db,
+      logger: ctx.logger,
+    });
+  }
 
   const scheduleTurn = async (job: TurnJob) => {
     await queues.turns.add('turn', job, {

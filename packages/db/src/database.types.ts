@@ -3,6 +3,186 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      ai_citations: {
+        Row: {
+          ai_run_id: string;
+          chunk_id: string;
+          created_at: string;
+          document_version_id: string | null;
+          id: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          ai_run_id: string;
+          chunk_id: string;
+          created_at?: string;
+          document_version_id?: string | null;
+          id?: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          ai_run_id?: string;
+          chunk_id?: string;
+          created_at?: string;
+          document_version_id?: string | null;
+          id?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_citations_tenant_id_ai_run_id_fkey';
+            columns: ['tenant_id', 'ai_run_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_runs';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'ai_citations_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_runs: {
+        Row: {
+          agent_key: string;
+          cache_read_tokens: number;
+          cache_write_tokens: number;
+          conversation_id: string | null;
+          cost_usd: number;
+          created_at: string;
+          error: string | null;
+          handoff_reason: string | null;
+          id: string;
+          input_tokens: number;
+          latency_ms: number;
+          message_id: string | null;
+          model: string;
+          outcome: string;
+          output_tokens: number;
+          tenant_id: string;
+          turns: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent_key: string;
+          cache_read_tokens?: number;
+          cache_write_tokens?: number;
+          conversation_id?: string | null;
+          cost_usd?: number;
+          created_at?: string;
+          error?: string | null;
+          handoff_reason?: string | null;
+          id?: string;
+          input_tokens?: number;
+          latency_ms?: number;
+          message_id?: string | null;
+          model: string;
+          outcome: string;
+          output_tokens?: number;
+          tenant_id: string;
+          turns?: number;
+          updated_at?: string;
+        };
+        Update: {
+          agent_key?: string;
+          cache_read_tokens?: number;
+          cache_write_tokens?: number;
+          conversation_id?: string | null;
+          cost_usd?: number;
+          created_at?: string;
+          error?: string | null;
+          handoff_reason?: string | null;
+          id?: string;
+          input_tokens?: number;
+          latency_ms?: number;
+          message_id?: string | null;
+          model?: string;
+          outcome?: string;
+          output_tokens?: number;
+          tenant_id?: string;
+          turns?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_runs_tenant_id_conversation_id_fkey';
+            columns: ['tenant_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'conversations';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'ai_runs_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_tool_calls: {
+        Row: {
+          ai_run_id: string;
+          args: NonNullable<Json>;
+          created_at: string;
+          duration_ms: number;
+          id: string;
+          is_error: boolean;
+          result_summary: string | null;
+          tenant_id: string;
+          tool: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          ai_run_id: string;
+          args?: NonNullable<Json>;
+          created_at?: string;
+          duration_ms?: number;
+          id?: string;
+          is_error?: boolean;
+          result_summary?: string | null;
+          tenant_id: string;
+          tool: string;
+          updated_at?: string;
+        };
+        Update: {
+          ai_run_id?: string;
+          args?: NonNullable<Json>;
+          created_at?: string;
+          duration_ms?: number;
+          id?: string;
+          is_error?: boolean;
+          result_summary?: string | null;
+          tenant_id?: string;
+          tool?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_tool_calls_tenant_id_ai_run_id_fkey';
+            columns: ['tenant_id', 'ai_run_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_runs';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'ai_tool_calls_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       audit_log: {
         Row: {
           action: string;

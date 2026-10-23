@@ -50,3 +50,14 @@ está automatizado. Cresce a cada passo de construção.
 | S06-H1 | contatos | cadastrar | telefone digitado com/sem 9; duplicado; inválido; buscar por nome e número; filtrar por tipo | id canônico, "Já existe…", erro de número, busca e filtro | e2e + API | passa |
 | S07-H1 | contato | editar e anonimizar | mudar tipo; anonimizar com confirmação | consentimentos e conversas listados; dados, mensagens e arquivos apagados; auditoria sem dados pessoais | e2e + API + RLS | passa |
 | S07-N1 | | leitor | abrir contato | sem formulário e sem anonimizar | e2e | passa |
+| F06-H1 | motor de agentes | resposta com fonte | busca → reply informativa com chunk da busca | texto + linha "📄 Fonte" montada pelo código; ai_runs, ai_tool_calls, ai_citations gravados | core (modelo simulado, banco real) | passa |
+| F06-N1 | | citação inventada | reply cita chunk que a busca não devolveu | resposta descartada, handoff `no_citation`, nada enviado | core | passa |
+| F06-N2 | | informativa sem busca | reply informativa sem chunk_ids | descartada, handoff `no_citation` | core + unidade | passa |
+| F06-E1 | | reply junto com busca | as duas na mesma chamada | reply recusada, o modelo vê os resultados e responde de novo | core | passa |
+| F06-E2 | | texto solto | modelo responde sem usar reply | uma cobrança; depois handoff `ai_error`; nada enviado | core | passa |
+| F06-E3 | | maxTurns | modelo só pede buscas | handoff `max_turns` | core | passa |
+| F06-E4 | | erro do modelo / recusa | exceção ou `stop_reason: refusal` | handoff `ai_error`, ai_runs `error` | core | passa |
+| F06-E5 | | argumentos inválidos | tool chamada com tipo errado | erro devolvido ao modelo, que se corrige | core | passa |
+| F06-E6 | | sem agente | conversa sem definição de agente | handoff `other`, nada de silêncio | core | passa |
+| F06-H2 | | classificador da equipe | mensagem de funcionário | módulo + confiança validados; saída inválida → null + ai_runs `error` | core | passa |
+| F06-H3 | | fiação no worker | webhook → turno → agente → envio | mensagem enviada e ai_runs com custo | worker (BullMQ real) | passa |

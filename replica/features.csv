@@ -27,19 +27,19 @@ Templates no painel com categoria e status (S22),whatsapp,must,yes,yes,sincroniz
 Resolver tenant pelo phone_number_id,roteamento,must,yes,yes,feito no 1.4 (record_inbound_message),4.3,F1.5
 Contatos com kind driver/patient/staff/unknown (S06 S07),roteamento,must,yes,yes,"id canônico (9º dígito), cadastro pelo painel, anonimização LGPD",4.3,F1.5
 Roteamento driver→Log patient/unknown→Labs,roteamento,must,yes,yes,"router puro + turno no worker; unknown sem Labs → identificação + humano",4.3,F1.5
-Classificador rápido para staff (LLM_MODEL_FAST),roteamento,must,yes,partial,"router aceita o classificador e pergunta com lista na dúvida; a chamada ao modelo entra no 1.6",4.3,F1.5
+Classificador rápido para staff (LLM_MODEL_FAST),roteamento,must,yes,yes,"saída JSON validada por zod; falha ou dúvida → pergunta com lista; grava ai_runs",4.3,F1.5
 default_module por número,roteamento,must,yes,yes,,4.3,F1.5
 Handoff aberto não passa pela IA,roteamento,must,yes,yes,tabela handoffs (um aberto por conversa); fechar pelo painel,4.3,F1.5
 Conversas e mensagens no painel (S04 S05),painel,must,yes,yes,"mídia por URL assinada, transcrição, falhas de envio, janela de 24 h; execuções da IA entram no 1.6",4.6,F1.5
-AgentDefinition em TypeScript,agentes,must,yes,no,,4.4,F1.6
-Loop de tool use com maxTurns,agentes,must,yes,no,,4.4,F1.6
-Contexto: tenant + últimas N mensagens + conversation_state,agentes,must,yes,no,,4.4,F1.6
-Guardrails obrigatórios no system prompt,agentes,must,yes,no,,4.4,F1.6
-ai_runs com tokens custo latência resultado,auditoria,must,yes,no,,4.8,F1.6
-ai_tool_calls por tool,auditoria,must,yes,no,,4.8,F1.6
-Tools do núcleo get_contact_profile send_template,agentes,must,yes,no,,4.4,F1.6
-Prompt caching nos system prompts,agentes,should,yes,no,,10,F1.6
-Modelos só por env (AGENT FAST VISION),agentes,must,yes,no,,2,F1.6
+AgentDefinition em TypeScript,agentes,must,yes,yes,agentes ficam no módulo (`ModuleDefinition.agents`); os agentes reais chegam com cada módulo,4.4,F1.6
+Loop de tool use com maxTurns,agentes,must,yes,yes,"loop manual; `reply` sozinha; texto solto nunca é enviado (ADR-0006)",4.4,F1.6
+Contexto: tenant + últimas N mensagens + conversation_state,agentes,must,yes,yes,"nome da empresa, contato, hora local e 20 mensagens (só texto); `conversation_state` por módulo entra com os módulos",4.4,F1.6
+Guardrails obrigatórios no system prompt,agentes,must,yes,yes,bloco único no core que o módulo não reescreve,4.4,F1.6
+ai_runs com tokens custo latência resultado,auditoria,must,yes,yes,"inclui tokens de cache, turnos e motivo do handoff; custo pela tabela LLM_PRICING",4.8,F1.6
+ai_tool_calls por tool,auditoria,must,yes,yes,argumentos validados por zod; resumo curto sem dados pessoais,4.8,F1.6
+Tools do núcleo get_contact_profile send_template,agentes,must,yes,partial,"reply, handoff_to_human e get_contact_profile feitas; search_knowledge no 1.8; send_template com os alertas",4.4,F1.6
+Prompt caching nos system prompts,agentes,should,yes,yes,"ponto de cache depois de tools + guardrails + prompt do agente; parte volátil depois",10,F1.6
+Modelos só por env (AGENT FAST VISION),agentes,must,yes,yes,lint proíbe nome de modelo no código,2,F1.6
 Upload de documento PDF DOCX TXT MD (S10),documentos,must,yes,no,,4.5,F1.7
 Coleções e metadados (código responsável vigência revisão tags),documentos,must,yes,no,,4.5,F1.7
 Status rascunho→em_revisao→aprovado→obsoleto,documentos,must,yes,no,,4.5,F1.7
@@ -147,7 +147,7 @@ Retenção configurável por tenant,lgpd,should,yes,no,,10,F1.11
 Exclusão/anonimização de contato a pedido,lgpd,must,yes,no,,10,F1.11
 Exportação completa do tenant (JSON + arquivos),lgpd,should,yes,no,,10,F1.12
 Minimização de dados enviados à IA,lgpd,must,yes,no,,10,F1.6
-Registro de custo de IA e WhatsApp por tenant,custos,must,yes,no,,10,F1.6
+Registro de custo de IA e WhatsApp por tenant,custos,must,yes,partial,"custo de IA por chamada em ai_runs; WhatsApp e usage_daily no 1.11",10,F1.6
 Logs pino com tenant_id conversation_id job_id,observabilidade,must,yes,yes,"worker e api logam ids, nunca texto de mensagem",2,F1.1
 Sentry para erros,observabilidade,should,yes,yes,"sem coleta de corpo, cabeçalho, fila ou entradas de IA",2,F1.1
 Deploy Docker + Traefik em VPS,infra,should,yes,no,,2,F1.13
