@@ -44,7 +44,22 @@ atendimento humano aberto) num número desativado: dá para ver Conversas e Cont
 Convites e "esqueci minha senha" chegam no Mailpit local: http://127.0.0.1:54324.
 
 Em produção, os modelos de e-mail de `supabase/templates/` precisam ser copiados para o projeto do Supabase
-(Authentication → Email Templates), com o link `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=…`.
+(Authentication → Email Templates), com o link `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=…` (o painel envia `redirectTo` = `WEB_URL/auth/confirm`; os modelos caem em `SiteURL` se vier vazio).
+
+## Abrir o painel em outro aparelho da rede
+
+```bash
+pnpm dev:lan      # descobre o IP desta máquina, ajusta o .env e sobe tudo
+```
+
+Ele mostra o endereço para abrir no outro aparelho (por exemplo `http://192.168.0.20:3000`). Se achar mais de um IP,
+escolha com `node scripts/lan.mjs --ip 192.168.0.20`. Libere as portas 3000, 4000, 54321 e 54324 no firewall desta
+máquina. Para voltar ao normal: `pnpm dev:local`.
+
+Por que as URLs mudam: os links de arquivos (fotos, documentos) são abertos pelo navegador do outro aparelho, então
+`SUPABASE_URL` precisa ser alcançável por ele. Os links dos e-mails de convite e de "esqueci a senha" agora usam o
+endereço do próprio painel (`WEB_URL`), não um endereço fixo. Depois de mudar o `supabase/config.toml` ou os
+modelos de e-mail, rode `pnpm db:stop && pnpm db:start`.
 
 ## Variáveis de ambiente
 

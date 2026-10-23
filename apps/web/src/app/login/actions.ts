@@ -1,5 +1,6 @@
 'use server';
 
+import { serverEnv } from '@/lib/env';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { formText } from '@/lib/form';
@@ -62,7 +63,10 @@ export async function requestPasswordReset(
   if (!email.success) return { message: 'Informe um e-mail válido.' };
   const supabase = await createSupabaseServerClient();
   // The answer is the same whether the e-mail exists or not (no account enumeration).
-  await supabase.auth.resetPasswordForEmail(email.data);
+  // The e-mail link points at this panel's own address (works on a LAN address too).
+  await supabase.auth.resetPasswordForEmail(email.data, {
+    redirectTo: `${serverEnv().WEB_URL}/auth/confirm`,
+  });
   return {
     ok: true,
     message: 'Se esse e-mail tiver acesso, você vai receber um link para criar uma nova senha.',

@@ -21,7 +21,9 @@
     "db:reset": "supabase db reset --local",
     "db:types": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts && prettier --write packages/db/src/database.types.ts",
     "env:local": "node scripts/supabase-env.mjs --write",
-    "e2e": "pnpm --filter @nurion/web e2e"
+    "e2e": "pnpm --filter @nurion/web e2e",
+    "dev:lan": "node scripts/lan.mjs && turbo run dev",
+    "dev:local": "node scripts/lan.mjs --off && turbo run dev"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

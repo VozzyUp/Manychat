@@ -14,6 +14,8 @@ const config: NextConfig = {
   outputFileTracingRoot: root,
   transpilePackages: ['@nurion/shared', '@nurion/db'],
   poweredByHeader: false,
+  // Testing from another device on the local network (`pnpm dev:lan`): private ranges only, dev server only.
+  allowedDevOrigins: ['192.168.*.*', '10.*.*.*', '172.*.*.*'],
   // Logos (1 MB) and documents (20 MB, enforced by the API) are uploaded through Server Actions.
   experimental: { serverActions: { bodySizeLimit: '21mb' } },
 };
