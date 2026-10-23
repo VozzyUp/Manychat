@@ -13,3 +13,5 @@ supabase/.branches
 playwright-report
 test-results
 evals/**/results
+dump.rdb
+*.rdb
