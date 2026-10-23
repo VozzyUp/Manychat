@@ -15,11 +15,13 @@
     "evals": "turbo run evals",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:start": "supabase start",
+    "db:start": "supabase start -x studio,imgproxy,vector,logflare,edge-runtime,realtime,supavisor,postgres-meta",
     "db:stop": "supabase stop",
     "db:migrate": "supabase migration up --local",
     "db:reset": "supabase db reset --local",
-    "db:types": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts && prettier --write packages/db/src/database.types.ts"
+    "db:types": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts && prettier --write packages/db/src/database.types.ts",
+    "env:local": "node scripts/supabase-env.mjs --write",
+    "e2e": "pnpm --filter @nurion/web e2e"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

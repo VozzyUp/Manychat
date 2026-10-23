@@ -32,8 +32,10 @@ export function createTenantFetch(
   if (!UUID.test(tenantId)) throw new TenantScopeError(`invalid tenant id "${tenantId}"`);
 
   const guarded: FetchLike = async (input, init = {}) => {
-    const request = input instanceof Request ? input : undefined;
-    const url = new URL(request ? request.url : input instanceof URL ? input.href : input);
+    const request = typeof input === 'string' || input instanceof URL ? undefined : input;
+    const url = new URL(
+      typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+    );
     const method = (init.method ?? request?.method ?? 'GET').toUpperCase();
     let body = init.body;
     const path = url.pathname;

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body
+    style="
+      font-family: Arial, sans-serif;
+      color: #141a21;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 24px;
+    "
+  >
+    <h2 style="margin: 0 0 12px">Você foi convidado para o Nurion Hub</h2>
+    <p>Sua empresa liberou seu acesso ao painel do Nurion Hub.</p>
+    <p>
+      Clique no botão abaixo para criar sua senha. O link vale por 24 horas e só pode ser usado uma
+      vez.
+    </p>
+    <p style="margin: 24px 0">
+      <a
+        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite"
+        style="
+          background: #0f766e;
+          color: #ffffff;
+          padding: 12px 20px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: bold;
+        "
+        >Criar minha senha</a
+      >
+    </p>
+    <p style="color: #55606d; font-size: 13px">
+      Se você não esperava este convite, ignore este e-mail.
+    </p>
+  </body>
+</html>

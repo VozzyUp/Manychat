@@ -330,3 +330,45 @@ describeDb('roles and guards inside a tenant (ESCOPO §4.1)', () => {
     });
   });
 });
+
+describeDb('optional 2FA is enforced by RLS (ESCOPO §2)', () => {
+  afterAll(closePool);
+
+  const enrollVerifiedFactor = (db: Db, userId: string) =>
+    db.query(
+      `insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at, secret)
+       values (gen_random_uuid(), $1, 'app', 'totp', 'verified', now(), now(), 'x')`,
+      [userId],
+    );
+
+  const actAs = async (db: Db, userId: string, aal: 'aal1' | 'aal2') => {
+    await db.query('set local role authenticated');
+    await db.query(`select set_config('request.jwt.claims', $1, true)`, [
+      JSON.stringify({ sub: userId, role: 'authenticated', aal }),
+    ]);
+  };
+
+  it('users without 2FA keep access with a password-only session', async () => {
+    await inRollback(async (db) => {
+      const world = await createWorld(db);
+      await actAs(db, world.users.ownerA, 'aal1');
+      expect(await rows(db, `select id from departments`)).toHaveLength(1);
+    });
+  });
+
+  it('users who enrolled 2FA see nothing until the session passes 2FA', async () => {
+    await inRollback(async (db) => {
+      const world = await createWorld(db);
+      await enrollVerifiedFactor(db, world.users.ownerA);
+
+      await actAs(db, world.users.ownerA, 'aal1');
+      expect(await rows(db, `select id from departments`)).toHaveLength(0);
+      expect(await rows(db, `select id from tenants`)).toHaveLength(0);
+      await expectRefused(db, `update departments set name = 'x' where id = $1`, [world.deptA]);
+
+      await actAs(db, world.users.ownerA, 'aal2');
+      expect(await rows(db, `select id from departments`)).toHaveLength(1);
+      expect(await rows(db, `select id from tenants`)).toHaveLength(1);
+    });
+  });
+});

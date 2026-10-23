@@ -17,25 +17,39 @@ Objetivo: em menos de 15 minutos, rodar web + api + worker com banco local e ver
 git clone git@github.com:VozzyUp/Manychat.git nurion-hub && cd nurion-hub
 corepack enable
 pnpm install
-cp .env.example .env            # preencha o que for usar; ver tabela abaixo
-pnpm db:start                   # = supabase start: Postgres + Auth + Storage (54321/54322)
-                                # só o banco (mais leve, basta para os testes): pnpm exec supabase db start
+pnpm db:start                   # Supabase local: Postgres, Auth, REST, Storage e e-mail (Mailpit :54324)
+pnpm env:local                  # cria/atualiza o .env com as chaves locais do Supabase
 docker compose -f infra/docker-compose.yml up -d redis   # ou um redis-server local
-pnpm db:migrate                 # aplica supabase/migrations
-pnpm db:types                   # gera packages/db/src/database.types.ts
-pnpm test                       # unidade + RLS
+pnpm db:reset                   # recria o banco: migrations + seed com dados de demonstração
+pnpm test                       # unidade + RLS + API contra o Supabase local
 pnpm dev                        # web :3000, api :4000, worker
+pnpm e2e                        # painel no navegador (Playwright), com web e api subindo sozinhos
 ```
 
-`supabase start` imprime a URL, a anon key e a service role key locais: copie para `SUPABASE_URL`,
-`SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` no `.env`.
+### Usuários de demonstração (só local, criados pelo `supabase/seed.sql`)
+
+Senha de todos: `NurionDemo!2026`.
+
+| e-mail | acesso |
+| --- | --- |
+| `gestor@demo.local` | owner da Transportadora Demo e admin do Laboratório Demo (vê o seletor de empresa) |
+| `qualidade@demo.local` | Qualidade na Transportadora Demo |
+| `leitor@demo.local` | leitor na Transportadora Demo |
+| `laboratorio@demo.local` | owner do Laboratório Demo |
+| `parceiro@nurion.local` | administrador do parceiro Nurion |
+
+Convites e "esqueci minha senha" chegam no Mailpit local: http://127.0.0.1:54324.
+
+Em produção, os modelos de e-mail de `supabase/templates/` precisam ser copiados para o projeto do Supabase
+(Authentication → Email Templates), com o link `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=…`.
 
 ## Variáveis de ambiente
 
 | variável | quem usa | local |
 | --- | --- | --- |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | web, api | saída do `supabase start` |
-| `SUPABASE_SERVICE_ROLE_KEY` | api, worker (**nunca** web) | saída do `supabase start` |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | web (só no servidor), api | `pnpm env:local` |
+| `SUPABASE_SERVICE_ROLE_KEY` | api, worker (**nunca** web) | `pnpm env:local` |
+| `API_URL`, `WEB_URL` | web, api | `http://localhost:4000`, `http://localhost:3000` |
 | `REDIS_URL` | api, worker | `redis://localhost:6379` |
 | `ANTHROPIC_API_KEY`, `LLM_MODEL_*` | worker, api (Testar a base) | sua chave de desenvolvimento |
 | `EMBEDDINGS_*` | worker, api | idem |
@@ -46,6 +60,9 @@ pnpm dev                        # web :3000, api :4000, worker
 | `SENTRY_DSN` | todos | vazio desliga |
 
 Sem chaves de IA/WhatsApp o sistema sobe; os testes usam mocks.
+
+Testes no navegador: o Playwright usa o Chromium que ele instala (`pnpm --filter @nurion/web exec playwright
+install chromium`) ou um já existente em `PW_CHROMIUM_PATH`.
 
 ## Testar o webhook do WhatsApp localmente
 

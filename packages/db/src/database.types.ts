@@ -110,6 +110,13 @@ export type Database = {
             referencedRelation: 'partners';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'partner_members_profile_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
         ];
       };
       partners: {
@@ -189,6 +196,13 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'tenant_members_profile_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'tenant_members_tenant_id_fkey';
             columns: ['tenant_id'];

@@ -90,6 +90,7 @@ SENTRY_DSN=
 
 - [x] Fase 1 · Passo 1 — monorepo, CI e ambiente local
 - [x] Fase 1 · Passo 2 — migrations do núcleo, RLS e testes de RLS
-- [ ] Fase 1 · Passo 3 — auth e painel base: login, troca de tenant, layout white-label
+- [x] Fase 1 · Passo 3 — auth e painel base: login, troca de tenant, layout white-label
+- [ ] Fase 1 · Passo 4 — webhook WhatsApp: validação, fila, idempotência, mídia, envio de texto e template
 
 Mapa do sistema e plano: `replica/recon.md`, `replica/architecture.md`, `docs/`. Log por passo: `replica/build-log.md`.

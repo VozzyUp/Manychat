@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./branding": "./src/branding.ts",
+    "./color": "./src/color.ts",
+    "./domain": "./src/domain.ts"
   },
   "scripts": {
     "lint": "eslint .",

@@ -60,8 +60,47 @@ export function createServiceDb(options: ServiceDbOptions) {
 
 export type ServiceDb = ReturnType<typeof createServiceDb>;
 
+export type VerifiedUser = { userId: string; email: string | null; aal: string | null };
+
+/**
+ * Verifies a Supabase access token (signature and expiry, via the project's JWKS) and returns who it
+ * belongs to. Returns null for anything invalid.
+ */
+export function createAuthVerifier(options: { url: string; anonKey: string }) {
+  const client = createClient<Database>(options.url, options.anonKey, { auth: noSession });
+  return async (token: string): Promise<VerifiedUser | null> => {
+    const { data, error } = await client.auth.getClaims(token);
+    if (error || !data?.claims.sub) return null;
+    const { claims } = data;
+    return {
+      userId: claims.sub,
+      email: typeof claims.email === 'string' ? claims.email : null,
+      aal: typeof claims.aal === 'string' ? claims.aal : null,
+    };
+  };
+}
+
 function createSystemQueries(raw: DbClient) {
   return {
+    /** Existing user id for an e-mail (profiles mirror auth.users), or null. */
+    async findUserIdByEmail(email: string): Promise<string | null> {
+      const { data, error } = await raw
+        .from('profiles')
+        .select('id')
+        .ilike('email', email.trim())
+        .maybeSingle();
+      if (error) throw error;
+      return data?.id ?? null;
+    },
+    /** Sends a Supabase invite e-mail and returns the new user's id. */
+    async inviteUser(email: string, options: { redirectTo: string; fullName?: string }) {
+      const { data, error } = await raw.auth.admin.inviteUserByEmail(email.trim(), {
+        redirectTo: options.redirectTo,
+        data: options.fullName ? { full_name: options.fullName } : undefined,
+      });
+      if (error) throw error;
+      return data.user.id;
+    },
     /** Tenant ids that are active (scheduled jobs iterate over these). */
     async listActiveTenantIds(): Promise<string[]> {
       const { data, error } = await raw.from('tenants').select('id').eq('status', 'active');

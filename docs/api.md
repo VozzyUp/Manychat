@@ -77,4 +77,65 @@ usados: `message_created` (mensagens de saída não privadas do atendente) e `co
 
 ## Rotas `/v1`
 
-_Documentadas a partir do passo 1.3, conforme forem implementadas._
+Papel mínimo entre parênteses. Toda rota com tenant exige `x-tenant-id` de um tenant ativo do qual o
+usuário é membro (senão `403`). Quem ativou 2FA só passa com sessão verificada em duas etapas (`aal2`).
+
+### `GET /v1/me` (autenticado)
+
+Quem sou, minhas empresas (com marca já resolvida e módulos ativos) e meus vínculos de parceiro.
+
+```json
+{
+  "user": { "id": "…", "email": "gestor@demo.local", "full_name": "Gestora Demo" },
+  "tenants": [
+    {
+      "role": "owner",
+      "tenant": {
+        "id": "…", "name": "Transportadora Demo", "slug": "transportadora-demo", "status": "active",
+        "timezone": "America/Sao_Paulo", "modules": ["log", "consult", "adm"],
+        "branding": { "productName": "Nurion Hub", "logoUrl": null, "accent": "#0f766e",
+                      "onAccent": "#ffffff", "accentText": "#0f766e" }
+      }
+    }
+  ],
+  "partners": []
+}
+```
+
+### `GET /v1/tenant` (viewer) · `PATCH /v1/tenant` (admin)
+
+Dados gerais e white-label do tenant ativo. No `PATCH`, todos os campos são opcionais e `null` remove a
+chave (volta ao padrão do parceiro).
+
+```json
+{
+  "name": "Transportadora Demo Ltda",
+  "branding": { "name": "Transportes Demo", "primary": "#7c3aed" },
+  "settings": { "timezone": "America/Manaus", "business_hours": "Seg–Sex 8h–18h", "rules": "…" }
+}
+```
+
+Resposta: o tenant com `branding` (como salvo) e `resolved_branding` (cores finais; o texto sobre a cor e a
+cor de link são ajustados para contraste ≥ 4,5:1). Cor fora de `#RRGGBB` ou fuso inexistente → `400`.
+
+### `POST /v1/tenant/logo` · `DELETE /v1/tenant/logo` (admin)
+
+`multipart/form-data` com o campo `file`: PNG, JPG ou WEBP (conferido pelo conteúdo, não só pelo tipo
+declarado), até 1 MB. SVG é recusado. O arquivo vai para o bucket público `branding` em `<tenant>/` e a URL
+entra em `branding.logo_url`. Erros: `400` tipo inválido, `413` grande demais.
+
+### Equipe (admin)
+
+| rota | corpo | respostas |
+| --- | --- | --- |
+| `POST /v1/members` | `{ "email", "role", "full_name"? }` | `201 { id, user_id, role, invited }` — `invited: true` quando a pessoa ainda não tinha conta e recebeu o e-mail de convite; `409` já é membro; `403` só owner concede owner |
+| `PATCH /v1/members/:id` | `{ "role" }` | `200`; `409` ao rebaixar o último owner; `404` membro de outro tenant |
+| `DELETE /v1/members/:id` | — | `204`; `409` último owner |
+
+### Setores (admin)
+
+| rota | corpo | respostas |
+| --- | --- | --- |
+| `POST /v1/departments` | `{ "name" }` | `201 { id, name }`; `409` nome repetido |
+| `PATCH /v1/departments/:id` | `{ "name" }` | `200`; `404` |
+| `DELETE /v1/departments/:id` | — | `204`; `409` em uso |

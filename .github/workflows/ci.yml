@@ -11,7 +11,7 @@ concurrency:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     services:
       redis:
         image: redis:7.4-alpine
@@ -19,9 +19,10 @@ jobs:
         options: >-
           --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
       REDIS_URL: redis://localhost:6379
-      # Database tests must run in CI (locally they are skipped when no database is up).
+      WEB_URL: http://localhost:3000
+      API_URL: http://localhost:4000
+      # Database/API tests must run in CI (locally they are skipped when the stack is down).
       REQUIRE_DB_TESTS: '1'
     steps:
       - uses: actions/checkout@v4
@@ -37,12 +38,22 @@ jobs:
         run: pnpm lint
       - name: Typecheck
         run: pnpm typecheck
-      - name: Start local Postgres (Supabase) with migrations
-        run: pnpm exec supabase db start
-      - name: Test (unit + RLS)
+      - name: Start local Supabase (Postgres, Auth, REST, Storage, e-mail)
+        run: |
+          pnpm db:start
+          node scripts/supabase-env.mjs >> "$GITHUB_ENV"
+      - name: Test (unit, RLS, API integration)
         run: pnpm test
       - name: Build
         run: pnpm build
-        env:
-          SUPABASE_URL: http://127.0.0.1:54321
-          SUPABASE_ANON_KEY: ci-placeholder
+      - name: Install Playwright browser
+        run: pnpm --filter @nurion/web exec playwright install --with-deps chromium
+      - name: End-to-end (panel in a real browser)
+        run: pnpm e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
