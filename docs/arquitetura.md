@@ -122,6 +122,19 @@ sequenceDiagram
   end
 ```
 
+### Roteamento (passo 1.5)
+
+- **Contato:** casado pelo id canônico do WhatsApp (celular brasileiro sempre com o 9). O id que chegou fica em
+  `contacts.metadata.wa_id_seen` e é para ele que a resposta vai.
+- **Debounce:** cada mensagem agenda o turno da conversa com atraso de 1,5 s e deduplicação por conversa
+  (`keepLastIfActive`): várias mensagens seguidas viram um turno só, que lê todas as não processadas.
+- **Regras** (`packages/core/src/conversation/router.ts`, função pura): handoff aberto → humano; motorista → Log;
+  paciente → Labs; desconhecido → módulo padrão do número, senão Labs (se contratado), senão mensagem de
+  identificação + handoff `unidentified`; equipe → módulo padrão do número, módulo da sessão, único módulo,
+  classificador rápido (confiança ≥ 0,7) ou pergunta com lista. O módulo escolhido fica na conversa por 2 h.
+- **Estado expirado** (§4.10): job a cada 15 min limpa `state` e módulo de conversas com `state_expires_at`
+  vencido.
+
 ## Motor de agentes
 
 - Um agente é dado (`AgentDefinition`), não uma classe: prompt, tools, escopo de coleções,

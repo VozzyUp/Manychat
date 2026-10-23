@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./branding": "./src/branding.ts",
     "./color": "./src/color.ts",
-    "./domain": "./src/domain.ts"
+    "./domain": "./src/domain.ts",
+    "./phone": "./src/phone.ts"
   },
   "scripts": {
     "lint": "eslint .",

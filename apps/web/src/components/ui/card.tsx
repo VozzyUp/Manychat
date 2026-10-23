@@ -1,10 +1,19 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from './cn';
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+/** `flush` drops the padding, for lists whose rows run edge to edge. */
+export function Card({
+  className,
+  flush,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { flush?: boolean }) {
   return (
     <div
-      className={cn('rounded-lg border border-border bg-bg p-5 shadow-card', className)}
+      className={cn(
+        'rounded-lg border border-border bg-bg shadow-card',
+        flush ? 'overflow-hidden' : 'p-5',
+        className,
+      )}
       {...props}
     />
   );

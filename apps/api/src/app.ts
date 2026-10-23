@@ -1,6 +1,7 @@
 import multipart from '@fastify/multipart';
 import type { Logger } from '@nurion/shared';
 import type { AppDeps } from './deps';
+import { contactRoutes } from './routes/contacts';
 import { departmentRoutes } from './routes/departments';
 import { meRoutes } from './routes/me';
 import { memberRoutes } from './routes/members';
@@ -30,6 +31,7 @@ export async function buildApp(options: {
   tenantRoutes(app, options.deps);
   memberRoutes(app, options.deps);
   departmentRoutes(app, options.deps);
+  contactRoutes(app, options.deps);
   whatsappNumberRoutes(app, options.deps);
   whatsappTemplateRoutes(app, options.deps);
   await whatsappWebhookRoutes(app, options.deps);

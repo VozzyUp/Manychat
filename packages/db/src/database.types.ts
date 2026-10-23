@@ -43,6 +43,64 @@ export type Database = {
         };
         Relationships: [];
       };
+      consents: {
+        Row: {
+          accepted_at: string;
+          channel: string;
+          contact_id: string;
+          created_at: string;
+          evidence_message_id: string | null;
+          id: string;
+          revoked_at: string | null;
+          tenant_id: string;
+          type: string;
+          updated_at: string;
+          version: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string;
+          channel?: string;
+          contact_id: string;
+          created_at?: string;
+          evidence_message_id?: string | null;
+          id?: string;
+          revoked_at?: string | null;
+          tenant_id: string;
+          type: string;
+          updated_at?: string;
+          version: string;
+        };
+        Update: {
+          accepted_at?: string;
+          channel?: string;
+          contact_id?: string;
+          created_at?: string;
+          evidence_message_id?: string | null;
+          id?: string;
+          revoked_at?: string | null;
+          tenant_id?: string;
+          type?: string;
+          updated_at?: string;
+          version?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'consents_tenant_id_contact_id_fkey';
+            columns: ['tenant_id', 'contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'consents_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       contacts: {
         Row: {
           anonymized_at: string | null;
@@ -188,6 +246,70 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'departments_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      handoffs: {
+        Row: {
+          chatwoot_conversation_id: string | null;
+          closed_at: string | null;
+          closed_by_user_id: string | null;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          opened_at: string;
+          opened_by: string;
+          reason: string;
+          status: string;
+          summary: string | null;
+          tenant_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          chatwoot_conversation_id?: string | null;
+          closed_at?: string | null;
+          closed_by_user_id?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          opened_at?: string;
+          opened_by?: string;
+          reason: string;
+          status?: string;
+          summary?: string | null;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          chatwoot_conversation_id?: string | null;
+          closed_at?: string | null;
+          closed_by_user_id?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          opened_at?: string;
+          opened_by?: string;
+          reason?: string;
+          status?: string;
+          summary?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'handoffs_tenant_id_conversation_id_fkey';
+            columns: ['tenant_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'conversations';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'handoffs_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -680,6 +802,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      anonymize_contact: {
+        Args: { p_actor?: string; p_contact_id: string; p_tenant_id: string };
+        Returns: string[];
+      };
       apply_message_status: {
         Args: {
           p_at: string;
@@ -691,6 +817,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      cleanup_expired_conversation_state: { Args: Record<PropertyKey, never>; Returns: number };
       record_inbound_message: {
         Args: {
           p_media?: Json;
@@ -702,6 +829,7 @@ export type Database = {
           p_text?: string;
           p_type: string;
           p_wa_id: string;
+          p_wa_id_seen?: string;
           p_wamid: string;
           p_whatsapp_number_id: string;
         };

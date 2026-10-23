@@ -1,5 +1,6 @@
 import { randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { QUEUES, queueOutboundMessage, type ChannelContext } from '@nurion/core';
+import { buildRegistry } from '../src/modules';
 import { createServiceDb } from '@nurion/db';
 import { createTestTenant, findLocalStack, runSql, type LocalStack } from '@nurion/db/testing';
 import { createLogger, createSecretBox } from '@nurion/shared';
@@ -47,7 +48,7 @@ describeAll('queues end to end (BullMQ + Redis + Supabase)', () => {
   let tenant: Awaited<ReturnType<typeof createTestTenant>>;
   let ctx: ChannelContext;
   let phoneNumberId: string;
-  let running: ReturnType<typeof startWorkers>;
+  let running: Awaited<ReturnType<typeof startWorkers>>;
   const queues = {
     inbound: new Queue(QUEUES.inboundMessages, { connection: redis, prefix }),
     outbound: new Queue(QUEUES.outboundMessages, { connection: redis, prefix }),
@@ -73,12 +74,14 @@ describeAll('queues end to end (BullMQ + Redis + Supabase)', () => {
       graph: { version: 'v23.0', fetch: graphFetch },
       logger: createLogger('worker-test', { level: 'silent' }),
     };
-    running = startWorkers({
+    running = await startWorkers({
       connection: redis.duplicate(),
       prefix,
-      ctx,
+      ctx: { ...ctx, registry: buildRegistry() },
       logger: ctx.logger,
       concurrency: 2,
+      schedules: false,
+      turnDebounceMs: 50,
     });
     await Promise.all([events.inbound.waitUntilReady(), events.outbound.waitUntilReady()]);
   });
@@ -92,7 +95,7 @@ describeAll('queues end to end (BullMQ + Redis + Supabase)', () => {
     await tenant?.drop();
   });
 
-  it('a webhook job becomes a stored message', async () => {
+  it('a webhook job becomes a stored message and a turn answers it (unknown contact → identification + human)', async () => {
     const wamid = `wamid.${digits(20)}`;
     const body = inbound({ type: 'text', text: { body: 'iniciar' } }, wamid);
     (
@@ -103,8 +106,37 @@ describeAll('queues end to end (BullMQ + Redis + Supabase)', () => {
       receivedAt: new Date().toISOString(),
     });
     await job.waitUntilFinished(events.inbound, 15_000);
-    const rows = await runSql(s, `select id from messages where wamid = $1`, [wamid]);
+    const rows = await runSql<{ conversation_id: string }>(
+      s,
+      `select conversation_id from messages where wamid = $1`,
+      [wamid],
+    );
     expect(rows).toHaveLength(1);
+
+    // The turn runs after the debounce, opens a handoff and the reply goes out through the outbound queue.
+    await expect.poll(async () => sends.length, { timeout: 10_000 }).toBe(1);
+    expect(sends[0]).toMatchObject({
+      type: 'text',
+      text: { body: expect.stringContaining('Não encontrei seu cadastro') },
+    });
+    const [handoff] = await runSql<{ reason: string }>(
+      s,
+      `select reason from handoffs where conversation_id = $1`,
+      [rows[0]!.conversation_id],
+    );
+    expect(handoff?.reason).toBe('unidentified');
+    await expect
+      .poll(
+        async () =>
+          (
+            await runSql(
+              s,
+              `select 1 from messages where wamid = $1 and processed_at is not null`,
+              [wamid],
+            )
+          ).length,
+      )
+      .toBe(1);
   });
 
   it('a permanent send error stops retrying and lands in the dead-letter queue', async () => {
@@ -126,8 +158,9 @@ describeAll('queues end to end (BullMQ + Redis + Supabase)', () => {
       { conversationId: conv!.id, author: 'ai', content: { kind: 'text', text: 'Olá' } },
     );
     const job = (await queues.outbound.getJob(messageId))!;
+    const before = sends.length;
     await expect(job.waitUntilFinished(events.outbound, 15_000)).rejects.toThrow(/recipient/);
-    expect(sends).toHaveLength(1);
+    expect(sends.length).toBe(before + 1);
 
     await expect
       .poll(async () => (await queues.dead.getJobs(['waiting'])).length, { timeout: 5_000 })

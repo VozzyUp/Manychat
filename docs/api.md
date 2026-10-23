@@ -160,3 +160,26 @@ a API confere o token com a Meta (`GET /{phone_number_id}`); depois cifra com AE
 | `PATCH /v1/whatsapp-templates/:id` | `{ "category"?, "body"? }` | `200` |
 | `DELETE /v1/whatsapp-templates/:id` | — | `204` (remove só do Nurion Hub) |
 | `POST /v1/whatsapp-templates/sync` | — | `200 { synced, wabas }`: nomes, corpos e status de aprovação vindos da Meta |
+
+### Contatos (operator; anonimizar: admin)
+
+O telefone digitado vira o id canônico do WhatsApp: só dígitos, `55` quando vem sem código do país (10 ou
+11 dígitos) e o 9 dos celulares brasileiros antigos (`551187654321` → `5511987654321`). Mensagens que chegam
+sem o 9 caem no mesmo contato; a resposta vai para o id exatamente como o WhatsApp mandou
+(`metadata.wa_id_seen`).
+
+| rota | corpo | respostas |
+| --- | --- | --- |
+| `POST /v1/contacts` | `{ "phone", "name"?, "kind"?: "driver"\|"patient"\|"staff"\|"unknown" }` | `201` contato; `400` número inválido; `409` já existe |
+| `PATCH /v1/contacts/:id` | `{ "name"?: string\|null, "kind"? }` | `200`; `409` contato anonimizado; `404` de outro tenant |
+| `POST /v1/contacts/:id/anonymize` | — | `200 { anonymized: true, removed_files }`: apaga nome, número, textos, transcrições, arquivos de mídia e os dados do contato na auditoria (LGPD, §10); `409` se já anonimizado |
+
+### Atendimento humano (operator)
+
+| rota | corpo | respostas |
+| --- | --- | --- |
+| `POST /v1/conversations/:id/handoff/close` | — | `200 { closed }`: a IA volta a responder; `404` sem atendimento aberto |
+
+A leitura de conversas, mensagens e contatos é feita pelo painel direto no Supabase com o token do usuário
+(RLS: qualquer membro do tenant). Mídias ficam no bucket privado `media` e o painel gera URLs assinadas de
+10 minutos.

@@ -24,13 +24,13 @@ Status de entrega sent/delivered/read/failed,whatsapp,must,yes,yes,sem regressã
 Tokens de WhatsApp criptografados no banco,whatsapp,must,yes,yes,AES-256-GCM com keyId; rotação com ops crypto:rotate,4.2,F1.4
 Cadastro de números de WhatsApp (S21),whatsapp,must,yes,yes,"token validado com a Meta, só escrita",4.2,F1.4
 Templates no painel com categoria e status (S22),whatsapp,must,yes,yes,sincronização de status com a Meta,4.2,F1.4
-Resolver tenant pelo phone_number_id,roteamento,must,yes,no,,4.3,F1.5
-Contatos com kind driver/patient/staff/unknown (S06 S07),roteamento,must,yes,no,,4.3,F1.5
-Roteamento driver→Log patient/unknown→Labs,roteamento,must,yes,no,,4.3,F1.5
-Classificador rápido para staff (LLM_MODEL_FAST),roteamento,must,yes,no,,4.3,F1.5
-default_module por número,roteamento,must,yes,no,,4.3,F1.5
-Handoff aberto não passa pela IA,roteamento,must,yes,no,,4.3,F1.5
-Conversas e mensagens no painel (S04 S05),painel,must,yes,no,,4.6,F1.5
+Resolver tenant pelo phone_number_id,roteamento,must,yes,yes,feito no 1.4 (record_inbound_message),4.3,F1.5
+Contatos com kind driver/patient/staff/unknown (S06 S07),roteamento,must,yes,yes,"id canônico (9º dígito), cadastro pelo painel, anonimização LGPD",4.3,F1.5
+Roteamento driver→Log patient/unknown→Labs,roteamento,must,yes,yes,"router puro + turno no worker; unknown sem Labs → identificação + humano",4.3,F1.5
+Classificador rápido para staff (LLM_MODEL_FAST),roteamento,must,yes,partial,"router aceita o classificador e pergunta com lista na dúvida; a chamada ao modelo entra no 1.6",4.3,F1.5
+default_module por número,roteamento,must,yes,yes,,4.3,F1.5
+Handoff aberto não passa pela IA,roteamento,must,yes,yes,tabela handoffs (um aberto por conversa); fechar pelo painel,4.3,F1.5
+Conversas e mensagens no painel (S04 S05),painel,must,yes,yes,"mídia por URL assinada, transcrição, falhas de envio, janela de 24 h; execuções da IA entram no 1.6",4.6,F1.5
 AgentDefinition em TypeScript,agentes,must,yes,no,,4.4,F1.6
 Loop de tool use com maxTurns,agentes,must,yes,no,,4.4,F1.6
 Contexto: tenant + últimas N mensagens + conversation_state,agentes,must,yes,no,,4.4,F1.6

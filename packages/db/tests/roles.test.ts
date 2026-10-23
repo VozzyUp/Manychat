@@ -408,3 +408,86 @@ describeDb('WhatsApp data (ESCOPO §4.2, ADR-0004)', () => {
     });
   });
 });
+
+describeDb('LGPD anonymization (ESCOPO §10)', () => {
+  afterAll(closePool);
+
+  it('removes personal data from the contact, its messages, media rows and audit entries', async () => {
+    await inRollback(async (db) => {
+      const world = await createWorld(db);
+      const [number] = await rows<{ id: string }>(
+        db,
+        `insert into whatsapp_numbers (tenant_id, phone_number_id, waba_id, display_number, access_token_enc)
+         values ($1, '7770001', '8880001', '+55 11 0000-0000', 'v1.x') returning id`,
+        [world.tenants.A],
+      );
+      const [contact] = await rows<{ id: string }>(
+        db,
+        `insert into contacts (tenant_id, wa_id, name, profile_name, metadata) values ($1, '5511987654321', 'Maria Paciente', 'Maria', '{"cpf":"x"}') returning id`,
+        [world.tenants.A],
+      );
+      const [conversation] = await rows<{ id: string }>(
+        db,
+        `insert into conversations (tenant_id, contact_id, whatsapp_number_id, state) values ($1, $2, $3, '{"x":1}') returning id`,
+        [world.tenants.A, contact!.id, number!.id],
+      );
+      const [message] = await rows<{ id: string }>(
+        db,
+        `insert into messages (tenant_id, conversation_id, wamid, direction, type, text, raw)
+         values ($1, $2, 'wamid.anon1', 'in', 'image', 'meu exame', '{"from":"5511987654321"}') returning id`,
+        [world.tenants.A, conversation!.id],
+      );
+      await db.query(
+        `insert into message_media (tenant_id, message_id, storage_path, status) values ($1, $2, $3, 'stored')`,
+        [world.tenants.A, message!.id, `${world.tenants.A}/2026/10/wamid.anon1.jpg`],
+      );
+
+      const paths = await rows<{ anonymize_contact: string }>(
+        db,
+        `select * from anonymize_contact($1, $2, $3)`,
+        [world.tenants.A, contact!.id, world.users.adminA],
+      );
+      expect(paths.map((p) => p.anonymize_contact)).toEqual([
+        `${world.tenants.A}/2026/10/wamid.anon1.jpg`,
+      ]);
+
+      const [after] = await rows<{
+        name: string | null;
+        wa_id: string;
+        metadata: object;
+        anonymized_at: Date;
+      }>(db, `select name, wa_id, metadata, anonymized_at from contacts where id = $1`, [
+        contact!.id,
+      ]);
+      expect(after).toMatchObject({ name: null, metadata: {} });
+      expect(after!.wa_id).toMatch(/^00\d{15}$/);
+      expect(after!.anonymized_at).toBeInstanceOf(Date);
+      const [msg] = await rows<{ text: string | null; raw: unknown }>(
+        db,
+        `select text, raw from messages where id = $1`,
+        [message!.id],
+      );
+      expect(msg).toEqual({ text: null, raw: null });
+      expect(
+        await rows(db, `select 1 from message_media where message_id = $1`, [message!.id]),
+      ).toHaveLength(0);
+      const audit = await rows<{ before: unknown; after: unknown }>(
+        db,
+        `select before, after from audit_log where entity = 'contacts' and entity_id = $1`,
+        [contact!.id],
+      );
+      expect(JSON.stringify(audit)).not.toContain('Maria');
+      expect(JSON.stringify(audit)).not.toContain('5511987654321');
+    });
+  });
+
+  it('only the service role can run it', async () => {
+    await inRollback(async (db) => {
+      const world = await createWorld(db);
+      await asUser(db, world.users.ownerA);
+      await expectSqlError(db, '42501', `select * from anonymize_contact($1, gen_random_uuid())`, [
+        world.tenants.A,
+      ]);
+    });
+  });
+});

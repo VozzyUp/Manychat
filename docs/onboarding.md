@@ -38,6 +38,9 @@ Senha de todos: `NurionDemo!2026`.
 | `laboratorio@demo.local` | owner do Laboratório Demo |
 | `parceiro@nurion.local` | administrador do parceiro Nurion |
 
+A Transportadora Demo vem com duas conversas de exemplo (um motorista e um contato não identificado com
+atendimento humano aberto) num número desativado: dá para ver Conversas e Contatos sem a Meta.
+
 Convites e "esqueci minha senha" chegam no Mailpit local: http://127.0.0.1:54324.
 
 Em produção, os modelos de e-mail de `supabase/templates/` precisam ser copiados para o projeto do Supabase

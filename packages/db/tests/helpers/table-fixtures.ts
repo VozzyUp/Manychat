@@ -74,6 +74,16 @@ export const TABLE_FIXTURES: Record<
       tenantId,
       await message(db, tenantId),
     ]),
+  consents: async (db, _world, tenantId) =>
+    db.query(
+      `insert into consents (tenant_id, contact_id, type, version) values ($1, $2, 'privacy_notice', 'v1')`,
+      [tenantId, await contact(db, tenantId)],
+    ),
+  handoffs: async (db, _world, tenantId) =>
+    db.query(
+      `insert into handoffs (tenant_id, conversation_id, reason) values ($1, $2, 'no_knowledge')`,
+      [tenantId, await conversation(db, tenantId)],
+    ),
   audit_log: async (db, _world, tenantId) =>
     db.query(
       `insert into audit_log (tenant_id, action, entity, entity_id) values ($1, 'insert', 'test', $2)`,

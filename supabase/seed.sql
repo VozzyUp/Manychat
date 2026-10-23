@@ -86,3 +86,59 @@ on conflict (tenant_id, user_id) do nothing;
 insert into public.partner_members (partner_id, user_id, role)
 values ('00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-00000000f004', 'admin')
 on conflict (partner_id, user_id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Demo conversations (Transportadora Demo) so Conversas/Contatos have something to show locally.
+-- The number is disabled and has no real token: nothing is ever sent from it.
+-- ---------------------------------------------------------------------------
+insert into public.whatsapp_numbers (id, tenant_id, phone_number_id, waba_id, display_number,
+                                     access_token_enc, token_last4, default_module, status, verified_name)
+values ('00000000-0000-4000-8000-0000000000d1', '00000000-0000-4000-8000-0000000000a1',
+        '100000000000001', '100000000000002', '+55 11 4000-0001', 'demo-sem-token', 'demo',
+        'log', 'disabled', 'Transportadora Demo')
+on conflict (id) do nothing;
+
+insert into public.contacts (id, tenant_id, wa_id, name, profile_name, kind)
+values
+  ('00000000-0000-4000-8000-0000000000e1', '00000000-0000-4000-8000-0000000000a1',
+   '5511990000001', 'João Motorista', 'João', 'driver'),
+  ('00000000-0000-4000-8000-0000000000e2', '00000000-0000-4000-8000-0000000000a1',
+   '5511990000002', null, 'Maria', 'unknown')
+on conflict (id) do nothing;
+
+insert into public.conversations (id, tenant_id, contact_id, whatsapp_number_id, module, agent_key,
+                                  last_inbound_at, last_message_at)
+values
+  ('00000000-0000-4000-8000-0000000000c1', '00000000-0000-4000-8000-0000000000a1',
+   '00000000-0000-4000-8000-0000000000e1', '00000000-0000-4000-8000-0000000000d1', 'log',
+   'log.driver', now() - interval '20 minutes', now() - interval '19 minutes'),
+  ('00000000-0000-4000-8000-0000000000c2', '00000000-0000-4000-8000-0000000000a1',
+   '00000000-0000-4000-8000-0000000000e2', '00000000-0000-4000-8000-0000000000d1', null, null,
+   now() - interval '2 hours', now() - interval '2 hours')
+on conflict (id) do nothing;
+
+insert into public.messages (tenant_id, conversation_id, wamid, direction, author, type, text,
+                             transcription, status, sent_at, created_at, processed_at)
+values
+  ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000c1', 'wamid.demo-1',
+   'in', 'contact', 'text', 'Bom dia, cheguei no cliente da entrega 4512.', null, 'received',
+   now() - interval '21 minutes', now() - interval '21 minutes', now() - interval '21 minutes'),
+  ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000c1', 'wamid.demo-2',
+   'in', 'contact', 'audio', null, 'O termômetro do baú está marcando seis graus.', 'received',
+   now() - interval '20 minutes', now() - interval '20 minutes', now() - interval '20 minutes'),
+  ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000c1', 'wamid.demo-3',
+   'out', 'ai', 'text', 'Obrigado, João. Envie uma foto do termômetro e do canhoto assinado.',
+   null, 'read', now() - interval '19 minutes', now() - interval '19 minutes', null),
+  ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000c2', 'wamid.demo-4',
+   'in', 'contact', 'text', 'Oi, queria saber do meu pedido.', null, 'received',
+   now() - interval '2 hours', now() - interval '2 hours', now() - interval '2 hours'),
+  ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000c2', null,
+   'out', 'system', 'text',
+   'Olá! Não encontrei seu cadastro neste número. Vou passar sua mensagem para a nossa equipe, que responde assim que possível.',
+   null, 'read', now() - interval '119 minutes', now() - interval '119 minutes', null)
+on conflict do nothing;
+
+insert into public.handoffs (tenant_id, conversation_id, reason, opened_by, opened_at)
+values ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000c2',
+        'unidentified', 'system', now() - interval '2 hours')
+on conflict do nothing;

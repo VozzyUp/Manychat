@@ -1,4 +1,4 @@
-import type { ModuleKey } from '@nurion/shared';
+import type { ContactKind, ModuleKey } from '@nurion/shared';
 
 /**
  * What a product module contributes to the platform. Modules register themselves here;
@@ -9,6 +9,8 @@ export type ModuleDefinition = {
   key: ModuleKey;
   /** Display name in the panel (pt-BR). */
   label: string;
+  /** Agent that talks to this kind of contact in this module (e.g. driver → 'log.driver'). */
+  agentFor?: (kind: ContactKind) => string | undefined;
 };
 
 export function defineModule(definition: ModuleDefinition): ModuleDefinition {

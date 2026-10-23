@@ -97,7 +97,7 @@ export async function processOutbound(
   const { data: conversation, error: convError } = await tdb
     .from('conversations')
     .select(
-      'id, last_inbound_at, contact:contacts(wa_id, anonymized_at), number:whatsapp_numbers(phone_number_id, access_token_enc, status)',
+      'id, last_inbound_at, contact:contacts(wa_id, metadata, anonymized_at), number:whatsapp_numbers(phone_number_id, access_token_enc, status)',
     )
     .eq('id', message.conversation_id)
     .single();
@@ -119,9 +119,12 @@ export async function processOutbound(
   }
 
   const client = whatsappClientFor(ctx, number);
+  // Reply to the id exactly as WhatsApp sent it (Brazilian 9th digit), else the canonical one.
+  const seen = (contact.metadata as { wa_id_seen?: unknown } | null)?.wa_id_seen;
+  const to = typeof seen === 'string' && seen ? seen : contact.wa_id;
   let wamid: string;
   try {
-    ({ wamid } = await send(client, contact.wa_id, content));
+    ({ wamid } = await send(client, to, content));
   } catch (err) {
     if (err instanceof GraphApiError && (!err.retryable || options.isLastAttempt)) {
       await markFailed(

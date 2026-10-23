@@ -36,3 +36,17 @@ está automatizado. Cresce a cada passo de construção.
 | S21-H1 | números | feliz | conectar número, testar, desativar | token validado, nunca exibido | e2e + API | passa |
 | S21-N1 | | token recusado | token inválido | mensagem citando a Meta | e2e + API | passa |
 | S22-H1 | templates | sincronizar | botão sincronizar | status de aprovação da Meta | e2e + API | passa |
+| F04-H1 | roteamento | motorista | motorista cadastrado com 9º dígito escreve sem ele | reconhecido, vai para Log, resposta para o id que o WhatsApp usou | core (turn) | passa |
+| F04-H2 | | contato desconhecido sem Labs | número novo escreve | mensagem de identificação, handoff `unidentified`, depois silêncio | core (turn) + worker | passa |
+| F04-H3 | | equipe com vários módulos | classificador confiante / em dúvida | roteia / pergunta com lista; escolha fica na sessão | core (router + turn) | passa |
+| F04-E1 | | handoff aberto | mensagem com atendimento humano aberto | a IA não responde | core (router) | passa |
+| F04-E2 | | estado expirado (§4.10) | `state_expires_at` no passado | estado e módulo esquecidos | core (turn) | passa |
+| S04-H1 | conversas | lista e filtros | abrir Conversas; filtrar por atendimento humano e por módulo | conversa com selo do motivo; filtros aplicados; axe ok | e2e | passa |
+| S05-H1 | conversa | mensagens | foto, áudio com transcrição, envio que falhou | foto por URL assinada carrega; transcrição; motivo da falha em pt-BR; janela de 24 h | e2e | passa |
+| S05-H2 | | encerrar atendimento humano | botão Encerrar | confirmação, handoff `closed` com quem fechou | e2e + API | passa |
+| S05-N1 | | leitor | abrir conversa com handoff | vê, sem botão de encerrar | e2e | passa |
+| S05-N2 | | outro tenant | id de conversa de outro tenant | 404 nas duas URLs, nada na lista | e2e + RLS | passa |
+| S05-M1 | | celular | conversa no Pixel 7 | sem rolagem horizontal, axe ok | e2e (mobile) | passa |
+| S06-H1 | contatos | cadastrar | telefone digitado com/sem 9; duplicado; inválido; buscar por nome e número; filtrar por tipo | id canônico, "Já existe…", erro de número, busca e filtro | e2e + API | passa |
+| S07-H1 | contato | editar e anonimizar | mudar tipo; anonimizar com confirmação | consentimentos e conversas listados; dados, mensagens e arquivos apagados; auditoria sem dados pessoais | e2e + API + RLS | passa |
+| S07-N1 | | leitor | abrir contato | sem formulário e sem anonimizar | e2e | passa |

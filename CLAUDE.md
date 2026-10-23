@@ -92,6 +92,7 @@ SENTRY_DSN=
 - [x] Fase 1 · Passo 2 — migrations do núcleo, RLS e testes de RLS
 - [x] Fase 1 · Passo 3 — auth e painel base: login, troca de tenant, layout white-label
 - [x] Fase 1 · Passo 4 — webhook WhatsApp: validação, fila, idempotência, mídia, envio de texto e template
-- [ ] Fase 1 · Passo 5 — contatos, conversas, mensagens e roteamento
+- [x] Fase 1 · Passo 5 — contatos, conversas, mensagens e roteamento
+- [ ] Fase 1 · Passo 6 — motor de agentes: loop de tool use, `ai_runs`, `ai_tool_calls`, limites
 
 Mapa do sistema e plano: `replica/recon.md`, `replica/architecture.md`, `docs/`. Log por passo: `replica/build-log.md`.

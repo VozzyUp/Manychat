@@ -20,4 +20,10 @@ export const messages = {
   numberTaken: 'Este número de WhatsApp já está cadastrado no Nurion Hub.',
   numberHasHistory: 'Este número já tem conversas. Desative-o em vez de excluir.',
   moduleNotEnabled: 'Esse módulo não está contratado pela empresa.',
+  invalidPhone: 'Telefone inválido. Use DDD e número, por exemplo (11) 98765-4321.',
+  contactExists: 'Já existe um contato com esse número.',
+  contactAnonymized: 'Este contato foi anonimizado e não pode mais ser alterado.',
+  mediaRemovalFailed:
+    'Não foi possível apagar os arquivos de mídia agora. Nada foi alterado; tente de novo em instantes.',
+  noOpenHandoff: 'Não há atendimento humano aberto nesta conversa.',
 } as const;

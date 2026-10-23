@@ -101,6 +101,10 @@ function createSystemQueries(raw: DbClient) {
       if (error) throw error;
       return data.user.id;
     },
+    /** §4.10: clears state (and the sticky module) of conversations whose state expired. */
+    cleanupExpiredConversationState() {
+      return raw.rpc('cleanup_expired_conversation_state');
+    },
     /** Every tenant id, active or not (maintenance such as key rotation). */
     async listAllTenantIds(): Promise<string[]> {
       const { data, error } = await raw.from('tenants').select('id');

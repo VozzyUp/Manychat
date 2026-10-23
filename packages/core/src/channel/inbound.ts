@@ -1,4 +1,5 @@
 import type { Json } from '@nurion/db';
+import { canonicalWaId } from '@nurion/shared';
 import { parseWebhook, type InboundMessage } from '@nurion/whatsapp';
 import { RetryLaterError, type ChannelContext } from './context';
 import { storeInboundMedia } from './media';
@@ -67,7 +68,8 @@ export async function processInboundWebhook(
     const { data, error } = await tdb.rpc('record_inbound_message', {
       p_tenant_id: number.tenant_id,
       p_whatsapp_number_id: number.id,
-      p_wa_id: message.waId,
+      p_wa_id: canonicalWaId(message.waId),
+      p_wa_id_seen: message.waId,
       p_wamid: message.wamid,
       p_type: message.type,
       p_payload: payloadOf(message),

@@ -1,12 +1,13 @@
 import {
   DEFAULT_JOB_OPTIONS,
   PermanentJobError,
+  processConversationTurn,
   processInboundWebhook,
   processOutbound,
   QUEUES,
-  type ChannelContext,
-  type OnInboundMessage,
   type OutboundJob,
+  type TurnContext,
+  type TurnJob,
 } from '@nurion/core';
 import type { Logger } from '@nurion/shared';
 import { Queue, UnrecoverableError, Worker, type Job, type Processor } from 'bullmq';
@@ -14,14 +15,20 @@ import type { Redis } from 'ioredis';
 
 export type InboundJob = { body: string; receivedAt: string };
 
+/** Messages that arrive within this window are answered in one turn (ADR-0008). */
+export const TURN_DEBOUNCE_MS = 1_500;
+
 export type WorkerSetup = {
   connection: Redis;
   prefix: string;
-  ctx: ChannelContext;
+  /** Turn context without the outbound queue (built here). */
+  ctx: Omit<TurnContext, 'enqueueOutbound'>;
   logger: Logger;
   concurrency: number;
-  onInbound?: OnInboundMessage;
   reportError?: (error: unknown, tags: Record<string, string | undefined>) => void;
+  /** Recurring jobs (§4.10). Off in tests that do not need them. */
+  schedules?: boolean;
+  turnDebounceMs?: number;
 };
 
 /** Domain errors that retrying cannot fix become BullMQ's UnrecoverableError (no more attempts). */
@@ -38,34 +45,83 @@ function guard<T, R>(processor: (job: Job<T>) => Promise<R>): Processor<T, R> {
 
 const isLastAttempt = (job: Job) => job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
 
-/** Starts every queue consumer of the channel. Failed jobs that will not retry go to the dead-letter queue. */
-export function startWorkers(setup: WorkerSetup): {
-  workers: Worker[];
-  close: () => Promise<void>;
-} {
-  const { connection, prefix, ctx, logger } = setup;
-  const deadLetter = new Queue(QUEUES.deadLetter, { connection, prefix });
+/** Starts every queue consumer. Failed jobs that will not retry go to the dead-letter queue. */
+export async function startWorkers(setup: WorkerSetup) {
+  const { connection, prefix, logger } = setup;
+  const queue = (name: string) => new Queue(name, { connection, prefix });
+  const queues = {
+    outbound: queue(QUEUES.outboundMessages),
+    turns: queue(QUEUES.conversationTurns),
+    scheduled: queue(QUEUES.scheduled),
+    deadLetter: queue(QUEUES.deadLetter),
+  };
 
-  const inbound = new Worker<InboundJob>(
-    QUEUES.inboundMessages,
-    guard(async (job) => {
-      const summary = await processInboundWebhook(ctx, JSON.parse(job.data.body), {
-        attempt: job.attemptsMade + 1,
-        onInbound: setup.onInbound,
+  const ctx: TurnContext = {
+    ...setup.ctx,
+    enqueueOutbound: async (job) => {
+      await queues.outbound.add('send', job, {
+        ...DEFAULT_JOB_OPTIONS[QUEUES.outboundMessages],
+        jobId: job.messageId,
       });
-      logger.info({ job_id: job.id, ...summary }, 'webhook processed');
-      return summary;
-    }),
-    { connection, prefix, concurrency: setup.concurrency },
-  );
+    },
+  };
 
-  const outbound = new Worker<OutboundJob>(
-    QUEUES.outboundMessages,
-    guard((job) => processOutbound(ctx, job.data, { isLastAttempt: isLastAttempt(job) })),
-    { connection, prefix, concurrency: Math.max(1, Math.floor(setup.concurrency / 2)) },
-  );
+  const scheduleTurn = async (job: TurnJob) => {
+    await queues.turns.add('turn', job, {
+      ...DEFAULT_JOB_OPTIONS[QUEUES.conversationTurns],
+      delay: setup.turnDebounceMs ?? TURN_DEBOUNCE_MS,
+      // One turn per conversation at a time; messages during a turn trigger exactly one more.
+      deduplication: { id: job.conversationId, keepLastIfActive: true },
+    });
+  };
 
-  const workers = [inbound, outbound];
+  const workers = [
+    new Worker<InboundJob>(
+      QUEUES.inboundMessages,
+      guard(async (job) => {
+        const summary = await processInboundWebhook(ctx, JSON.parse(job.data.body), {
+          attempt: job.attemptsMade + 1,
+          onInbound: async (event) =>
+            scheduleTurn({ tenantId: event.tenantId, conversationId: event.conversationId }),
+        });
+        logger.info({ job_id: job.id, ...summary }, 'webhook processed');
+        return summary;
+      }),
+      { connection, prefix, concurrency: setup.concurrency },
+    ),
+    new Worker<TurnJob>(
+      QUEUES.conversationTurns,
+      guard((job) => processConversationTurn(ctx, job.data)),
+      { connection, prefix, concurrency: setup.concurrency },
+    ),
+    new Worker<OutboundJob>(
+      QUEUES.outboundMessages,
+      guard((job) => processOutbound(ctx, job.data, { isLastAttempt: isLastAttempt(job) })),
+      { connection, prefix, concurrency: Math.max(1, Math.floor(setup.concurrency / 2)) },
+    ),
+    new Worker(
+      QUEUES.scheduled,
+      guard(async (job) => {
+        if (job.name === 'conversation-state-cleanup') {
+          const { data, error } = await ctx.db.system.cleanupExpiredConversationState();
+          if (error) throw new Error(error.message);
+          logger.info({ job_id: job.id, cleared: data }, 'expired conversation state cleared');
+          return { cleared: data };
+        }
+        throw new PermanentJobError(`unknown scheduled job ${job.name}`);
+      }),
+      { connection, prefix, concurrency: 1 },
+    ),
+  ];
+
+  if (setup.schedules !== false) {
+    await queues.scheduled.upsertJobScheduler(
+      'conversation-state-cleanup',
+      { every: 15 * 60 * 1000 },
+      { name: 'conversation-state-cleanup', opts: DEFAULT_JOB_OPTIONS[QUEUES.scheduled] },
+    );
+  }
+
   for (const worker of workers) {
     worker.on('failed', (job, error) => {
       if (!job) return;
@@ -78,7 +134,7 @@ export function startWorkers(setup: WorkerSetup): {
       }
       log.error({ err: error }, 'job failed for good, moved to dead-letter');
       setup.reportError?.(error, { queue: worker.name, job_id: job.id });
-      void deadLetter
+      void queues.deadLetter
         .add(
           worker.name,
           {
@@ -99,9 +155,10 @@ export function startWorkers(setup: WorkerSetup): {
 
   return {
     workers,
+    queues,
     close: async () => {
       await Promise.all(workers.map((w) => w.close()));
-      await deadLetter.close();
+      await Promise.all(Object.values(queues).map((q) => q.close()));
     },
   };
 }

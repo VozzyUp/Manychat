@@ -13,7 +13,7 @@ const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
 const registry = buildRegistry();
 const reporter = createErrorReporter(env.SENTRY_DSN, 'worker');
 
-const { close } = startWorkers({
+const { close } = await startWorkers({
   connection,
   prefix: env.QUEUE_PREFIX,
   concurrency: env.WORKER_CONCURRENCY,
@@ -28,9 +28,9 @@ const { close } = startWorkers({
     secrets: createSecretBox({ key: env.ENCRYPTION_KEY, previousKey: env.ENCRYPTION_KEY_PREVIOUS }),
     graph: { version: env.WHATSAPP_GRAPH_VERSION, baseUrl: env.WHATSAPP_GRAPH_BASE_URL },
     logger,
+    registry,
+    // Staff intent classifier and agents plug in with the agent engine (build step 1.6).
   },
-  // The router (build step 1.5) schedules agent turns from here.
-  onInbound: undefined,
 });
 
 const health = createHealthServer(async () => (await connection.ping()) === 'PONG');
