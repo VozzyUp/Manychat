@@ -45,6 +45,8 @@ configurável por tenant, e a linha fica aqui até ser confirmada.
 | P30 | PDFs escaneados são comuns nos POPs do cliente? (define a prioridade do OCR) | passo 1.9 | falha com aviso; OCR no passo 1.9 |
 | P31 | Qual a relevância mínima aceitável? O limiar 0,3 foi escolhido sem documentos reais | passo 1.13 (evals) | 0,3 de similaridade; ajuste por empresa em `settings.rag.min_similarity` |
 | P32 | "Perguntas sem resposta" guarda o texto que o contato escreveu: por quanto tempo e quem pode ver? | LGPD | visível para Qualidade ou acima; anonimizar o contato apaga as conversas, mas não esta lista (a definir) |
+| P33 | Custo da transcrição: o Groq cobra por hora de áudio. Registrar a duração em `ai_runs` e um preço por hora no `LLM_PRICING`? | passo 1.11 (custos) | custo de transcrição registrado como 0 |
+| P34 | Voice note longo (acima de alguns minutos): transcrever tudo ou pedir para resumir? | Log/Labs | transcreve até 25 MB (limite do provedor) |
 
 ## Decididas
 

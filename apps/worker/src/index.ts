@@ -1,6 +1,7 @@
 import {
   createAnthropicClient,
   createErrorReporter,
+  createGroqTranscriber,
   createOpenAiEmbeddings,
   parsePricing,
 } from '@nurion/core';
@@ -54,6 +55,13 @@ const { close } = await startWorkers({
     graph: { version: env.WHATSAPP_GRAPH_VERSION, baseUrl: env.WHATSAPP_GRAPH_BASE_URL },
     logger,
     registry,
+    transcriber: env.GROQ_API_KEY
+      ? createGroqTranscriber({
+          apiKey: env.GROQ_API_KEY,
+          model: env.GROQ_WHISPER_MODEL,
+          baseUrl: env.GROQ_BASE_URL,
+        })
+      : undefined,
   },
 });
 
@@ -65,6 +73,7 @@ health.listen(env.WORKER_HEALTH_PORT, () => {
       modules: registry.list().map((m) => m.key),
       agent_engine: Boolean(env.ANTHROPIC_API_KEY),
       embeddings: Boolean(env.EMBEDDINGS_API_KEY),
+      transcription: Boolean(env.GROQ_API_KEY),
     },
     'worker started',
   );

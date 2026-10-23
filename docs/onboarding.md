@@ -56,7 +56,7 @@ Em produção, os modelos de e-mail de `supabase/templates/` precisam ser copiad
 | `REDIS_URL` | api, worker | `redis://localhost:6379` |
 | `ANTHROPIC_API_KEY`, `LLM_MODEL_*` | worker, api (Testar a base) | sua chave de desenvolvimento |
 | `EMBEDDINGS_API_KEY`, `EMBEDDINGS_MODEL`, `EMBEDDINGS_BASE_URL` | worker | idem; sem elas os documentos aprovados ficam com "falha no processamento" e um admin reprocessa depois |
-| `GROQ_API_KEY` | worker | idem |
+| `GROQ_API_KEY`, `GROQ_WHISPER_MODEL` | worker | idem; sem a chave, áudios chegam ao agente como "não transcrito" |
 | `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | api | `pnpm env:local` gera valores locais; para receber mensagens reais, use os do app Meta de desenvolvimento |
 | `WHATSAPP_GRAPH_VERSION` | api, worker | `v23.0` |
 | `QUEUE_PREFIX` | api, worker | `nurion` |

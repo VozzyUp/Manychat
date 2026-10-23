@@ -115,6 +115,7 @@ export async function startWorkers(setup: WorkerSetup) {
       guard(async (job) => {
         const summary = await processInboundWebhook(ctx, JSON.parse(job.data.body), {
           attempt: job.attemptsMade + 1,
+          isLastAttempt: isLastAttempt(job),
           onInbound: async (event) =>
             scheduleTurn({ tenantId: event.tenantId, conversationId: event.conversationId }),
         });

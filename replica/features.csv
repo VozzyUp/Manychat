@@ -58,10 +58,10 @@ ai_citations,auditoria,must,yes,yes,"gravado a cada resposta com fonte",4.8,F1.8
 Formato de citação no WhatsApp,rag,must,yes,yes,"linha montada pelo código a partir do trecho",4.4,F1.8
 Tela Testar a base (S11),rag,must,yes,yes,"mesma busca e mesma regra de fonte; gestor ou acima; custo exibido",4.5,F1.8
 Perguntas sem resposta (S12),rag,must,yes,yes,"Qualidade ou acima; registra handoff por falta de base ou resposta sem fonte descartada",4.5,F1.8
-Transcrição de áudio via Whisper (Groq),multimodal,must,yes,no,,4.6,F1.9
-Transcrição gravada e mostrada no painel,multimodal,must,yes,no,,4.6,F1.9
-Visão com saída zod + confidence,multimodal,must,yes,no,,4.6,F1.9
-PDF recebido no WhatsApp extraído ou salvo como evidência,multimodal,must,yes,no,,4.6,F1.9
+Transcrição de áudio via Whisper (Groq),multimodal,must,yes,yes,"antes do turno; tenta de novo se o provedor cair; na última tentativa segue sem texto",4.6,F1.9
+Transcrição gravada e mostrada no painel,multimodal,must,yes,yes,"em `messages.transcription`; o painel mostra o texto ou o motivo de não haver",4.6,F1.9
+Visão com saída zod + confidence,multimodal,must,yes,partial,"infraestrutura pronta (`extractFromImage`, `defineVisionTool`, `confidence` obrigatório); as ferramentas reais (`read_thermometer`, `read_medical_order`) chegam com Log e Labs",4.6,F1.9
+PDF recebido no WhatsApp extraído ou salvo como evidência,multimodal,must,yes,partial,"texto extraído e dado ao agente; salvar como evidência de entrega/NC entra com `attach_evidence` (1.11)",4.6,F1.9
 handoff_to_human abre conversa no Chatwoot com resumo,handoff,must,yes,no,,4.7,F1.10
 Mensagens do Chatwoot saem pelo WhatsApp,handoff,must,yes,no,,4.7,F1.10
 Resolver no Chatwoot devolve para a IA,handoff,must,yes,no,,4.7,F1.10

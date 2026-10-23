@@ -4,6 +4,7 @@ export * from './engine';
 export * from './guardrails';
 export * from './knowledge-test';
 export * from './llm';
+export * from './media-access';
 export * from './pricing';
 export * from './tools';
 export * from './types';

@@ -26,6 +26,10 @@ export const workerEnvSchema = z
     EMBEDDINGS_API_KEY: llmOptional,
     EMBEDDINGS_MODEL: llmOptional,
     EMBEDDINGS_BASE_URL: z.url().optional(),
+    /** Voice-note transcription (§4.6). Without the key, audio reaches the agent as "not transcribed". */
+    GROQ_API_KEY: llmOptional,
+    GROQ_WHISPER_MODEL: z.string().min(1).default('whisper-large-v3-turbo'),
+    GROQ_BASE_URL: z.url().optional(),
   })
   .superRefine((env, ctx) => {
     if (!env.ANTHROPIC_API_KEY) return;

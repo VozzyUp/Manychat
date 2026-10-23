@@ -96,6 +96,7 @@ SENTRY_DSN=
 - [x] Fase 1 · Passo 6 — motor de agentes: loop de tool use, `ai_runs`, `ai_tool_calls`, limites
 - [x] Fase 1 · Passo 7 — documentos: upload, versões, aprovação, ingestão, chunking, embeddings
 - [x] Fase 1 · Passo 8 — `search_knowledge` híbrida + validação de citação + tela "Testar a base"
-- [ ] Fase 1 · Passo 9 — multimodal: transcrição de áudio e visão com saída estruturada
+- [x] Fase 1 · Passo 9 — multimodal: transcrição de áudio e visão com saída estruturada
+- [ ] Fase 1 · Passo 10 — handoff via Chatwoot (ida e volta)
 
 Mapa do sistema e plano: `replica/recon.md`, `replica/architecture.md`, `docs/`. Log por passo: `replica/build-log.md`.

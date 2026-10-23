@@ -13,6 +13,7 @@ import {
   type ChannelContext,
 } from '../src/channel';
 import { createFakeGraph } from './fake-graph';
+import { TranscriptionError } from '../src/multimodal/transcribe';
 
 const stack = await findLocalStack('core channel');
 const describeStack = stack ? describe : describe.skip;
@@ -154,6 +155,54 @@ describeStack('WhatsApp channel against the local stack', () => {
       .storage.from('media')
       .download(media!.storage_path);
     expect(Buffer.from(await download.data!.arrayBuffer()).equals(PNG)).toBe(true);
+  });
+
+  it('a voice note is transcribed before the turn is scheduled, and a retry after an outage still transcribes it', async () => {
+    const mediaId = digits(16);
+    graph.state.media.set(mediaId, {
+      mime: 'audio/ogg; codecs=opus',
+      bytes: Buffer.from([1, 2, 3, 4]),
+    });
+    const id = wamid();
+    const body = forOurNumber(
+      inbound(
+        {
+          type: 'audio',
+          audio: { id: mediaId, mime_type: 'audio/ogg; codecs=opus', sha256: 'x', voice: true },
+        },
+        id,
+      ),
+    );
+    let outage = true;
+    const withAudio: ChannelContext = {
+      ...ctx,
+      transcriber: {
+        model: 'whisper-test',
+        async transcribe() {
+          if (outage) throw new TranscriptionError('provider returned 503', true);
+          return { text: 'Cheguei no cliente.', durationSeconds: 2, language: 'pt' };
+        },
+      },
+    };
+    const seen: (string | null)[] = [];
+    const onInbound = async (e: { messageId: string }) => {
+      const [m] = await runSql<{ transcription: string | null }>(
+        s,
+        `select transcription from messages where id = $1`,
+        [e.messageId],
+      );
+      seen.push(m!.transcription);
+    };
+
+    // Outage on attempt 1: the job fails (and will retry); the turn was not scheduled yet.
+    await expect(
+      processInboundWebhook(withAudio, body, { attempt: 1, isLastAttempt: false, onInbound }),
+    ).rejects.toThrow('503');
+    expect(seen).toEqual([]);
+
+    outage = false;
+    await processInboundWebhook(withAudio, body, { attempt: 2, isLastAttempt: false, onInbound });
+    expect(seen).toEqual(['Cheguei no cliente.']);
   });
 
   async function conversationId() {

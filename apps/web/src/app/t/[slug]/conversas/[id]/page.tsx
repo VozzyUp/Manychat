@@ -50,7 +50,7 @@ export default async function ConversationPage({
     supabase
       .from('messages')
       .select(
-        'id, direction, author, type, text, transcription, payload, status, error, sent_at, created_at, media:message_media(id, storage_path, mime, filename, status)',
+        'id, direction, author, type, text, transcription, payload, status, error, sent_at, created_at, media:message_media(id, storage_path, mime, filename, status, extracted_text, error)',
       )
       .eq('tenant_id', tenant.id)
       .eq('conversation_id', id)
@@ -77,6 +77,8 @@ export default async function ConversationPage({
       mime: f.mime,
       filename: f.filename,
       status: f.status,
+      extracted_text: f.extracted_text,
+      error: f.error,
       url: f.storage_path ? urls.get(f.storage_path) : undefined,
     })),
   }));

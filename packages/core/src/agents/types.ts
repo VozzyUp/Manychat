@@ -39,6 +39,17 @@ export type ToolContext = {
   agent: AgentDefinition;
   /** Searches the tenant's base within this agent's collections. Throws if no base is configured. */
   search: (query: string) => Promise<ChunkRef[]>;
+  /**
+   * Reads an image of THIS conversation with the vision model and returns validated JSON (§4.6,
+   * rule 6). Refuses media of other conversations and anything that is not a stored image.
+   */
+  readImage: <T>(input: {
+    mediaId: string;
+    schema: z.ZodType<T>;
+    instruction: string;
+    /** Names the audit row (`ai_runs.agent_key = vision.<name>`). */
+    name: string;
+  }) => Promise<T>;
   /** Chunks `search_knowledge` returned in this run: the only ones a reply may cite. */
   retrieved: ReadonlyMap<string, ChunkRef>;
   logger: Logger;

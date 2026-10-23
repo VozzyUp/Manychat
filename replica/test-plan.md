@@ -86,3 +86,12 @@ está automatizado. Cresce a cada passo de construção.
 | S11-N1 | | fora da base | pergunta sem trecho relevante | "Sem resposta", nenhuma fonte inventada | e2e | passa |
 | S11-N2 | | papéis | Qualidade abre a tela; sem IA configurada | só gestor+ testa; 503 claro sem configuração | API + e2e | passa |
 | S12-H1 | perguntas sem resposta | resolver e reabrir | lista, resolver, reabrir; leitor | só Qualidade+ vê; filtros abertas/resolvidas | API + e2e + RLS | passa |
+| F09-H1 | áudio | transcrição | voice note no webhook | texto gravado em `messages.transcription` antes de agendar o turno; `ai_runs` `media.transcription` | core | passa |
+| F09-E1 | | provedor fora do ar | 503 do Whisper | job tenta de novo; na última tentativa segue sem texto e a mídia diz o motivo; erro permanente não repete | core | passa |
+| F09-E2 | | repetição | webhook repetido / job refeito | só faz o que falta (uma transcrição) | core | passa |
+| F09-H2 | PDF recebido | texto | PDF com texto; PDF escaneado | texto guardado; escaneado marcado e não repetido | core | passa |
+| F09-H3 | agente | o que o modelo vê | áudio transcrito, imagem, PDF, áudio sem texto | texto; imagem só como `media_id`; PDF como dado; pedido para escrever | core | passa |
+| F09-H4 | visão | leitura estruturada | `read_thermometer` de teste | imagem vai ao modelo de visão; saída validada com `confidence`; `ai_runs` `vision.*` | core + unidade | passa |
+| F09-N1 | | acesso à mídia | media_id de outra conversa, de áudio, não baixada | recusado; só a legítima chega ao modelo | core | passa |
+| F09-N2 | | saída inválida | JSON sem `confidence`, fora do limite, não-JSON | erro para o agente, nunca um chute; schema sem `confidence` nem pode ser definido | unidade + core | passa |
+| S05-H3 | conversa no painel | PDF e áudio | PDF com texto lido; áudio sem transcrição | "Texto lido do PDF" e o motivo da falha aparecem | e2e | passa |

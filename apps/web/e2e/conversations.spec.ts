@@ -88,6 +88,27 @@ async function createConversation(tenantId: string, contactName: string) {
      values ($1, $2, 'out', 'ai', 'text', 'Lembrete da coleta', 'failed', '{"code": "outside_window"}', now() - interval '40 minutes')`,
     [tenantId, conversationId],
   );
+  // A PDF whose text was read and a voice note that could not be transcribed.
+  const [pdf] = await sql<{ id: string }>(
+    `insert into messages (tenant_id, conversation_id, wamid, direction, author, type, status, sent_at)
+     values ($1, $2, $3, 'in', 'contact', 'document', 'received', now() - interval '42 minutes') returning id`,
+    [tenantId, conversationId, `wamid.${digits(20)}`],
+  );
+  await sql(
+    `insert into message_media (tenant_id, message_id, mime, filename, status, extracted_text)
+     values ($1, $2, 'application/pdf', 'pedido.pdf', 'pending', 'Pedido de coleta 77 da unidade norte')`,
+    [tenantId, pdf!.id],
+  );
+  const [voice] = await sql<{ id: string }>(
+    `insert into messages (tenant_id, conversation_id, wamid, direction, author, type, status, sent_at)
+     values ($1, $2, $3, 'in', 'contact', 'audio', 'received', now() - interval '41 minutes') returning id`,
+    [tenantId, conversationId, `wamid.${digits(20)}`],
+  );
+  await sql(
+    `insert into message_media (tenant_id, message_id, mime, status, error)
+     values ($1, $2, 'audio/ogg', 'pending', 'Transcrição falhou: provider returned 503')`,
+    [tenantId, voice!.id],
+  );
   await sql(
     `insert into consents (tenant_id, contact_id, type, version) values ($1, $2, 'privacy_notice', '2026-10')`,
     [tenantId, contactId],
@@ -168,6 +189,8 @@ test.describe('S04/S05 conversations', () => {
       .toBe(true);
     await expect(page.getByText('Canhoto assinado')).toBeVisible();
     await expect(page.getByText('Termômetro marcando seis graus')).toBeVisible();
+    await expect(page.getByText('Texto lido do PDF')).toBeVisible();
+    await expect(page.getByText('Transcrição falhou: provider returned 503')).toBeVisible();
     await expect(page.getByText('Fora da janela de 24 h do WhatsApp')).toBeVisible();
     await expect(page.getByText('Entregue')).toBeVisible();
     await expect(page.getByText('Aberta', { exact: true })).toBeVisible();

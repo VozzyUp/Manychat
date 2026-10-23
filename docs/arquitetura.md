@@ -174,6 +174,17 @@ flowchart LR
   A -->|versão anterior| O[obsoleto]
 ```
 
+### Multimodal (passo 1.9)
+
+- **Áudio:** no job de entrada, depois de guardar o arquivo e antes de agendar o turno, o Whisper (Groq) transcreve em
+  português e o texto vai para `messages.transcription`. Se o provedor cair, o job tenta de novo; na última tentativa a
+  mensagem segue sem texto e o agente pede que o contato escreva.
+- **PDF recebido:** o texto é extraído e guardado em `message_media.extracted_text`; o agente o lê como dado, nunca como
+  instrução. PDF escaneado fica marcado (sem OCR).
+- **Imagem:** o agente nunca vê a foto. Vê `[media_id: …]` e chama a ferramenta de leitura do módulo (`defineVisionTool`),
+  que manda a imagem ao modelo de visão com a instrução da ferramenta e devolve JSON validado por zod, sempre com
+  `confidence`. Só lê mídia da própria conversa.
+
 ### Ingestão na prática (passo 1.7)
 
 - **Quando:** ao aprovar. Rascunhos e versões em revisão não geram chunks nem custo de embeddings.

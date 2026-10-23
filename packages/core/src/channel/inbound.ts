@@ -2,6 +2,7 @@ import type { Json } from '@nurion/db';
 import { canonicalWaId } from '@nurion/shared';
 import { parseWebhook, type InboundMessage } from '@nurion/whatsapp';
 import { RetryLaterError, type ChannelContext } from './context';
+import { enrichInboundMedia } from '../multimodal/enrich';
 import { storeInboundMedia } from './media';
 
 /** Called for every stored inbound message (the router schedules the agent turn from here). */
@@ -34,7 +35,7 @@ type NumberRow = NonNullable<
 export async function processInboundWebhook(
   ctx: ChannelContext,
   body: unknown,
-  options: { attempt: number; onInbound?: OnInboundMessage },
+  options: { attempt: number; isLastAttempt?: boolean; onInbound?: OnInboundMessage },
 ): Promise<InboundSummary> {
   const parsed = parseWebhook(body);
   const summary: InboundSummary = {
@@ -106,6 +107,13 @@ export async function processInboundWebhook(
         filename: message.media.filename,
       });
       log.info({ size: stored.size, mime: stored.mime }, 'inbound media stored');
+    }
+    // Audio → text, PDF → text. Also on repeated deliveries: it only does what is still missing.
+    if (message.media) {
+      await enrichInboundMedia(ctx, tdb, {
+        messageId: row.message_id,
+        isLastAttempt: options.isLastAttempt ?? false,
+      });
     }
     log.info({ type: message.type, duplicate: !row.inserted }, 'inbound message recorded');
     await options.onInbound?.({

@@ -792,6 +792,7 @@ export type Database = {
         Row: {
           created_at: string;
           error: string | null;
+          extracted_text: string | null;
           filename: string | null;
           id: string;
           media_id: string | null;
@@ -808,6 +809,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           error?: string | null;
+          extracted_text?: string | null;
           filename?: string | null;
           id?: string;
           media_id?: string | null;
@@ -823,6 +825,7 @@ export type Database = {
         Update: {
           created_at?: string;
           error?: string | null;
+          extracted_text?: string | null;
           filename?: string | null;
           id?: string;
           media_id?: string | null;

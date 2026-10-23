@@ -26,6 +26,8 @@ export type MessageView = {
     mime: string | null;
     filename: string | null;
     status: string;
+    extracted_text?: string | null;
+    error?: string | null;
     url?: string;
   }[];
 };
@@ -125,6 +127,26 @@ export function MessageBubble({ message, timeZone }: { message: MessageView; tim
         ) : fallback && message.type !== 'text' ? (
           <p className="text-sm italic text-muted">{fallback}</p>
         ) : null}
+        {message.media.map((m) =>
+          m.extracted_text ? (
+            <details key={`text-${m.id}`} className="text-sm text-text">
+              <summary className="cursor-pointer font-medium">Texto lido do PDF</summary>
+              <p className="mt-1 whitespace-pre-wrap break-words text-muted">
+                {m.extracted_text.slice(0, 2000)}
+                {m.extracted_text.length > 2000 ? '…' : ''}
+              </p>
+            </details>
+          ) : null,
+        )}
+        {!message.transcription && message.type === 'audio'
+          ? message.media.map((m) =>
+              m.error ? (
+                <p key={`err-${m.id}`} className="text-sm text-muted">
+                  {m.error}
+                </p>
+              ) : null,
+            )
+          : null}
         {message.transcription ? (
           <p className="border-l-2 border-border pl-2 text-sm text-text">
             <span className="font-medium">Transcrição: </span>

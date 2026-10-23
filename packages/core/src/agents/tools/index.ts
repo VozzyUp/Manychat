@@ -4,6 +4,7 @@ import { handoffTool } from './handoff';
 import { replyTool } from './reply';
 import { searchKnowledgeTool } from './search';
 
+export { defineVisionTool } from './vision';
 export { contactProfileTool, handoffTool, replyTool, searchKnowledgeTool };
 
 /**

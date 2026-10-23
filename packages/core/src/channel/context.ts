@@ -1,6 +1,7 @@
 import type { ServiceDb } from '@nurion/db';
 import type { Logger, SecretBox } from '@nurion/shared';
 import { WhatsAppClient } from '@nurion/whatsapp';
+import type { Transcriber } from '../multimodal/transcribe';
 
 /** What the channel code needs from the outside world (built by the worker; fakes in tests). */
 export type ChannelContext = {
@@ -9,6 +10,8 @@ export type ChannelContext = {
   graph: { version: string; baseUrl?: string; fetch?: typeof fetch };
   logger: Logger;
   now?: () => Date;
+  /** Speech-to-text for voice notes (§4.6). Without it, audio reaches the agent as "not transcribed". */
+  transcriber?: Transcriber;
 };
 
 /** Thrown for failures that retrying cannot fix (the worker turns it into a non-retryable job error). */
