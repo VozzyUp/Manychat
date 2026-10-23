@@ -1,4 +1,4 @@
-import type { ContactKind, ModuleKey, Role } from '@nurion/shared';
+import type { Collection, ContactKind, DocumentStatus, ModuleKey, Role } from '@nurion/shared';
 
 /** Panel labels in pt-BR. */
 export const ROLE_LABELS: Record<Role, string> = {
@@ -91,4 +91,29 @@ export const CONSENT_TYPE_LABELS: Record<string, string> = {
   privacy_notice: 'Aviso de privacidade',
   data_processing: 'Tratamento de dados',
   marketing: 'Comunicações',
+};
+
+export const COLLECTION_LABELS: Record<Collection, string> = {
+  pop: 'POP',
+  manual: 'Manual',
+  norma: 'Norma',
+  contrato: 'Contrato',
+  politica: 'Política',
+  faq: 'Perguntas frequentes',
+  preparo_exame: 'Preparo de exame',
+  outro: 'Outro',
+};
+
+export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
+  rascunho: 'Rascunho',
+  em_revisao: 'Em revisão',
+  aprovado: 'Aprovado',
+  obsoleto: 'Obsoleto',
+};
+
+export const INGEST_STATUS_LABELS: Record<string, string> = {
+  pending: 'Aguardando processamento',
+  processing: 'Processando',
+  ready: 'Pronto para a IA',
+  failed: 'Falhou',
 };

@@ -52,6 +52,21 @@ const aiRun = async (db: Db, tenantId: string) =>
     [tenantId, await conversation(db, tenantId)],
   );
 
+const document = (db: Db, tenantId: string) =>
+  insertReturningId(
+    db,
+    `insert into documents (tenant_id, collection, title) values ($1, 'pop', 'POP de teste') returning id`,
+    [tenantId],
+  );
+
+const documentVersion = async (db: Db, tenantId: string) =>
+  insertReturningId(
+    db,
+    `insert into document_versions (tenant_id, document_id, version, storage_path, filename, mime, size, sha256)
+     values ($1, $2, 1, $3, 'pop.txt', 'text/plain', 10, 'abc') returning id`,
+    [tenantId, await document(db, tenantId), `${tenantId}/doc/${randomUUID()}.txt`],
+  );
+
 export const TABLE_FIXTURES: Record<
   string,
   (db: Db, world: World, tenantId: string) => Promise<unknown>
@@ -104,6 +119,23 @@ export const TABLE_FIXTURES: Record<
       await aiRun(db, tenantId),
       randomUUID(),
     ]),
+  documents: async (db, _world, tenantId) => document(db, tenantId),
+  document_versions: async (db, _world, tenantId) => documentVersion(db, tenantId),
+  document_chunks: async (db, _world, tenantId) => {
+    const doc = await document(db, tenantId);
+    const [version] = (
+      await db.query<{ id: string }>(
+        `insert into document_versions (tenant_id, document_id, version, storage_path, filename, mime, size, sha256)
+         values ($1, $2, 1, $3, 'pop.txt', 'text/plain', 10, 'abc') returning id`,
+        [tenantId, doc, `${tenantId}/doc/${randomUUID()}.txt`],
+      )
+    ).rows;
+    return db.query(
+      `insert into document_chunks (tenant_id, document_id, document_version_id, chunk_index, content, token_count, embedding, embedding_model)
+       values ($1, $2, $3, 0, 'texto', 3, $4::extensions.vector, 'test')`,
+      [tenantId, doc, version!.id, `[${Array.from({ length: 1536 }, () => 0.01).join(',')}]`],
+    );
+  },
   audit_log: async (db, _world, tenantId) =>
     db.query(
       `insert into audit_log (tenant_id, action, entity, entity_id) values ($1, 'insert', 'test', $2)`,

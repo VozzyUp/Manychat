@@ -1,5 +1,14 @@
 import type { TenantMembership } from '@nurion/db/queries';
-import { Contact, Home, LogOut, Menu, MessagesSquare, Settings, ShieldCheck } from 'lucide-react';
+import {
+  Contact,
+  FileText,
+  Home,
+  LogOut,
+  Menu,
+  MessagesSquare,
+  Settings,
+  ShieldCheck,
+} from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { signOut } from '@/app/actions/auth';
@@ -26,6 +35,9 @@ export function AppShell({ membership, memberships, userEmail, children }: Props
       </NavLink>
       <NavLink href={`${base}/conversas`}>
         <MessagesSquare aria-hidden size={16} /> Conversas
+      </NavLink>
+      <NavLink href={`${base}/documentos`}>
+        <FileText aria-hidden size={16} /> Documentos
       </NavLink>
       <NavLink href={`${base}/contatos`}>
         <Contact aria-hidden size={16} /> Contatos

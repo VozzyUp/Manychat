@@ -183,3 +183,20 @@ sem o 9 caem no mesmo contato; a resposta vai para o id exatamente como o WhatsA
 A leitura de conversas, mensagens e contatos é feita pelo painel direto no Supabase com o token do usuário
 (RLS: qualquer membro do tenant). Mídias ficam no bucket privado `media` e o painel gera URLs assinadas de
 10 minutos.
+
+### Documentos (operator; aprovar, devolver e obsoletar: quality; reprocessar: admin)
+
+Envio em `multipart/form-data`: os campos de texto vêm **antes** do arquivo. PDF, DOCX, TXT ou MD, até 20 MB; o
+tipo é conferido pelos bytes. Todo envio cria um **rascunho**.
+
+| rota | corpo | respostas |
+| --- | --- | --- |
+| `POST /v1/documents` | campos `title`, `collection`, `code`?, `owner_user_id`?, `tags`? (vírgulas), `effective_date`?, `review_date`? + `file` | `201` documento com `version` (v1, rascunho); `400` tipo ou campos inválidos; `409` código já existe; `413` arquivo grande |
+| `POST /v1/documents/:id/versions` | `effective_date`?, `review_date`? + `file` | `201` versão `n+1` em rascunho; `409` arquivo idêntico à última versão |
+| `PATCH /v1/documents/:id` | `title`?, `collection`?, `code`?, `owner_user_id`?, `tags`? | `200`; `409` código já existe |
+| `PATCH /v1/document-versions/:id` | `effective_date`?, `review_date`?, `summary`? | `200`; `400` revisão antes da vigência |
+| `POST /v1/document-versions/:id/transition` | `{ "to": "em_revisao" \| "rascunho" \| "aprovado" \| "obsoleto" }` | `200`; `409` salto inválido; `403` sem papel. Aprovar enfileira `ingest-document` |
+| `POST /v1/document-versions/:id/reingest` | — | `200`; `409` se não for uma versão aprovada com falha ou pendente |
+
+Fluxo: `rascunho → em_revisao → aprovado → obsoleto` (e `em_revisao → rascunho` na devolução). Só a versão
+aprovada **e** processada alimenta a IA (`document_versions.activated_at`).

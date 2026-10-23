@@ -22,6 +22,10 @@ export const workerEnvSchema = z
     LLM_MODEL_FAST: llmOptional,
     LLM_MODEL_VISION: llmOptional,
     LLM_PRICING: z.string().optional(),
+    /** Without these, documents cannot be ingested (the panel shows why). */
+    EMBEDDINGS_API_KEY: llmOptional,
+    EMBEDDINGS_MODEL: llmOptional,
+    EMBEDDINGS_BASE_URL: z.url().optional(),
   })
   .superRefine((env, ctx) => {
     if (!env.ANTHROPIC_API_KEY) return;

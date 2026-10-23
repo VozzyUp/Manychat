@@ -47,6 +47,13 @@ export type Database = {
             referencedRelation: 'tenants';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'ai_citations_version_fk';
+            columns: ['tenant_id', 'document_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'document_versions';
+            referencedColumns: ['tenant_id', 'id'];
+          },
         ];
       };
       ai_runs: {
@@ -426,6 +433,232 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'departments_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      document_chunks: {
+        Row: {
+          chunk_index: number;
+          content: string;
+          created_at: string;
+          document_id: string;
+          document_version_id: string;
+          embedding: string;
+          embedding_model: string;
+          id: string;
+          page: number | null;
+          section_path: string | null;
+          tenant_id: string;
+          token_count: number;
+          tsv: unknown;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          chunk_index: number;
+          content: string;
+          created_at?: string;
+          document_id: string;
+          document_version_id: string;
+          embedding: string;
+          embedding_model: string;
+          id?: string;
+          page?: number | null;
+          section_path?: string | null;
+          tenant_id: string;
+          token_count: number;
+          tsv?: never;
+          updated_at?: string;
+        };
+        Update: {
+          chunk_index?: number;
+          content?: string;
+          created_at?: string;
+          document_id?: string;
+          document_version_id?: string;
+          embedding?: string;
+          embedding_model?: string;
+          id?: string;
+          page?: number | null;
+          section_path?: string | null;
+          tenant_id?: string;
+          token_count?: number;
+          tsv?: never;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'document_chunks_tenant_id_document_id_fkey';
+            columns: ['tenant_id', 'document_id'];
+            isOneToOne: false;
+            referencedRelation: 'documents';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'document_chunks_tenant_id_document_version_id_fkey';
+            columns: ['tenant_id', 'document_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'document_versions';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'document_chunks_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      document_versions: {
+        Row: {
+          activated_at: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          chunk_count: number;
+          created_at: string;
+          created_by: string | null;
+          document_id: string;
+          effective_date: string | null;
+          filename: string;
+          id: string;
+          ingest_error: string | null;
+          ingest_status: string;
+          ingested_at: string | null;
+          mime: string;
+          review_date: string | null;
+          sha256: string;
+          size: number;
+          status: string;
+          storage_path: string;
+          summary: string | null;
+          tenant_id: string;
+          updated_at: string;
+          version: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          activated_at?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          chunk_count?: number;
+          created_at?: string;
+          created_by?: string | null;
+          document_id: string;
+          effective_date?: string | null;
+          filename: string;
+          id?: string;
+          ingest_error?: string | null;
+          ingest_status?: string;
+          ingested_at?: string | null;
+          mime: string;
+          review_date?: string | null;
+          sha256: string;
+          size: number;
+          status?: string;
+          storage_path: string;
+          summary?: string | null;
+          tenant_id: string;
+          updated_at?: string;
+          version: number;
+        };
+        Update: {
+          activated_at?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          chunk_count?: number;
+          created_at?: string;
+          created_by?: string | null;
+          document_id?: string;
+          effective_date?: string | null;
+          filename?: string;
+          id?: string;
+          ingest_error?: string | null;
+          ingest_status?: string;
+          ingested_at?: string | null;
+          mime?: string;
+          review_date?: string | null;
+          sha256?: string;
+          size?: number;
+          status?: string;
+          storage_path?: string;
+          summary?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'document_versions_tenant_id_document_id_fkey';
+            columns: ['tenant_id', 'document_id'];
+            isOneToOne: false;
+            referencedRelation: 'documents';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'document_versions_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      documents: {
+        Row: {
+          code: string | null;
+          collection: string;
+          created_at: string;
+          created_by: string | null;
+          current_version_id: string | null;
+          id: string;
+          owner_user_id: string | null;
+          tags: string[];
+          tenant_id: string;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          code?: string | null;
+          collection: string;
+          created_at?: string;
+          created_by?: string | null;
+          current_version_id?: string | null;
+          id?: string;
+          owner_user_id?: string | null;
+          tags?: string[];
+          tenant_id: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          code?: string | null;
+          collection?: string;
+          created_at?: string;
+          created_by?: string | null;
+          current_version_id?: string | null;
+          id?: string;
+          owner_user_id?: string | null;
+          tags?: string[];
+          tenant_id?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'documents_current_version_fk';
+            columns: ['tenant_id', 'current_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'document_versions';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'documents_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -982,6 +1215,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      activate_document_version: {
+        Args: { p_tenant_id: string; p_version_id: string };
+        Returns: undefined;
+      };
       anonymize_contact: {
         Args: { p_actor?: string; p_contact_id: string; p_tenant_id: string };
         Returns: string[];

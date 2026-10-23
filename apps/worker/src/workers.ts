@@ -3,10 +3,13 @@ import {
   DEFAULT_JOB_OPTIONS,
   PermanentJobError,
   processConversationTurn,
+  processIngest,
   processInboundWebhook,
   processOutbound,
   QUEUES,
   runAgentTurn,
+  type EmbeddingsProvider,
+  type IngestJob,
   type LlmClient,
   type ModelNames,
   type Pricing,
@@ -30,6 +33,8 @@ export type WorkerSetup = {
   ctx: Omit<TurnContext, 'enqueueOutbound'>;
   /** The model side of the agent engine. Without it, conversations that need an agent go to a human. */
   llm?: { client: LlmClient; models: ModelNames; pricing: Pricing };
+  /** Without it, document ingestion fails with a clear message instead of guessing. */
+  embeddings?: EmbeddingsProvider;
   logger: Logger;
   concurrency: number;
   reportError?: (error: unknown, tags: Record<string, string | undefined>) => void;
@@ -117,6 +122,15 @@ export async function startWorkers(setup: WorkerSetup) {
       QUEUES.outboundMessages,
       guard((job) => processOutbound(ctx, job.data, { isLastAttempt: isLastAttempt(job) })),
       { connection, prefix, concurrency: Math.max(1, Math.floor(setup.concurrency / 2)) },
+    ),
+    new Worker<IngestJob>(
+      QUEUES.ingestDocument,
+      guard((job) =>
+        processIngest({ ...ctx, embeddings: setup.embeddings, llm: setup.llm }, job.data, {
+          isLastAttempt: isLastAttempt(job),
+        }),
+      ),
+      { connection, prefix, concurrency: 2 },
     ),
     new Worker(
       QUEUES.scheduled,

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { createLogger, createSecretBox } from '@nurion/shared';
 import { buildApp } from '../../src/app';
-import { createDeps, type AppDeps, type InboundJob } from '../../src/deps';
+import { createDeps, type AppDeps, type InboundJob, type IngestJob } from '../../src/deps';
 import { loadApiEnv } from '../../src/env';
 import { stack } from './stack';
 
@@ -21,15 +21,17 @@ export async function buildTestApp(overrides: Partial<AppDeps> = {}) {
   });
   const logger = createLogger('api-test', { level: 'silent' });
   const enqueued: { job: InboundJob; jobId: string }[] = [];
+  const ingests: { job: IngestJob; jobId: string }[] = [];
   const deps: AppDeps = {
     ...createDeps(env, logger, {
       enqueueInbound: async (job, jobId) => void enqueued.push({ job, jobId }),
+      enqueueIngest: async (job, jobId) => void ingests.push({ job, jobId }),
     }),
     secrets: createSecretBox({ key: randomBytes(32).toString('base64') }),
     ...overrides,
   };
   const app = await buildApp({ logger, deps });
-  return Object.assign(app, { enqueued, deps });
+  return Object.assign(app, { enqueued, ingests, deps });
 }
 
 export const as = (token: string, tenantId?: string) => ({
@@ -56,3 +58,31 @@ export const PNG_1PX = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
   'base64',
 );
+
+/** multipart/form-data with text fields (sent before the file) and one file. */
+export function multipartForm(
+  fields: Record<string, string>,
+  file: { field: string; filename: string; contentType: string; data: Buffer },
+) {
+  const boundary = `----nurion${Date.now()}${Math.random().toString(16).slice(2)}`;
+  const parts: Buffer[] = [];
+  for (const [name, value] of Object.entries(fields)) {
+    parts.push(
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`,
+      ),
+    );
+  }
+  parts.push(
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="${file.field}"; filename="${file.filename}"\r\n` +
+        `Content-Type: ${file.contentType}\r\n\r\n`,
+    ),
+    file.data,
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  );
+  return {
+    payload: Buffer.concat(parts),
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+  };
+}

@@ -1,4 +1,9 @@
-import { createAnthropicClient, createErrorReporter, parsePricing } from '@nurion/core';
+import {
+  createAnthropicClient,
+  createErrorReporter,
+  createOpenAiEmbeddings,
+  parsePricing,
+} from '@nurion/core';
 import { createServiceDb } from '@nurion/db';
 import { createLogger, createSecretBox } from '@nurion/shared';
 import { Redis } from 'ioredis';
@@ -31,6 +36,14 @@ const { close } = await startWorkers({
           pricing: parsePricing(env.LLM_PRICING),
         }
       : undefined,
+  embeddings:
+    env.EMBEDDINGS_API_KEY && env.EMBEDDINGS_MODEL
+      ? createOpenAiEmbeddings({
+          apiKey: env.EMBEDDINGS_API_KEY,
+          model: env.EMBEDDINGS_MODEL,
+          baseUrl: env.EMBEDDINGS_BASE_URL,
+        })
+      : undefined,
   ctx: {
     db: createServiceDb({
       url: env.SUPABASE_URL,
@@ -51,6 +64,7 @@ health.listen(env.WORKER_HEALTH_PORT, () => {
       port: env.WORKER_HEALTH_PORT,
       modules: registry.list().map((m) => m.key),
       agent_engine: Boolean(env.ANTHROPIC_API_KEY),
+      embeddings: Boolean(env.EMBEDDINGS_API_KEY),
     },
     'worker started',
   );

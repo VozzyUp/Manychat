@@ -40,6 +40,9 @@ configurável por tenant, e a linha fica aqui até ser confirmada.
 | P25 | Papéis são hierárquicos (owner > admin > manager > quality > operator > viewer) ou há permissões exclusivas (ex.: só Qualidade aprova POP)? | §4.1 | passos 1.7 e 1.11 | hierárquico: quem está acima herda o de baixo |
 | P26 | Tenant suspenso ou módulo desligado: a IA deve responder o quê? | passo 1.6 | hoje responde normalmente; falta decidir entre silêncio, aviso fixo ou handoff |
 | P27 | Retenção do texto das mensagens enviadas ao modelo e de `ai_tool_calls.args` (podem conter dados pessoais) | passo 1.6 / LGPD | mantidos enquanto o contato não for anonimizado; prazo por tenant a definir |
+| P28 | Quem aprova documento: só Qualidade? Quem enviou pode aprovar o próprio? (segregação de funções) | passo 1.7 | Qualidade ou acima aprova, inclusive o próprio envio |
+| P29 | Provedor de embeddings: OpenAI ou Voyage? (hoje só API compatível com OpenAI, 1536 dimensões) | passo 1.7 | OpenAI `text-embedding-3-small` por env |
+| P30 | PDFs escaneados são comuns nos POPs do cliente? (define a prioridade do OCR) | passo 1.9 | falha com aviso; OCR no passo 1.9 |
 
 ## Decididas
 

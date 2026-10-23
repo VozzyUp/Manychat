@@ -40,16 +40,16 @@ ai_tool_calls por tool,auditoria,must,yes,yes,argumentos validados por zod; resu
 Tools do núcleo get_contact_profile send_template,agentes,must,yes,partial,"reply, handoff_to_human e get_contact_profile feitas; search_knowledge no 1.8; send_template com os alertas",4.4,F1.6
 Prompt caching nos system prompts,agentes,should,yes,yes,"ponto de cache depois de tools + guardrails + prompt do agente; parte volátil depois",10,F1.6
 Modelos só por env (AGENT FAST VISION),agentes,must,yes,yes,lint proíbe nome de modelo no código,2,F1.6
-Upload de documento PDF DOCX TXT MD (S10),documentos,must,yes,no,,4.5,F1.7
-Coleções e metadados (código responsável vigência revisão tags),documentos,must,yes,no,,4.5,F1.7
-Status rascunho→em_revisao→aprovado→obsoleto,documentos,must,yes,no,,4.5,F1.7
-Versões com obsolescência automática,documentos,must,yes,no,,4.5,F1.7
-Ingestão: extração pdf-parse/mammoth,documentos,must,yes,no,,4.5,F1.7
-OCR com modelo de visão para PDF escaneado,documentos,must,yes,no,,4.5,F1.7
-Chunking por seção 500–800 tokens overlap 80,documentos,must,yes,no,,4.5,F1.7
-Embeddings com provedor configurável,documentos,must,yes,no,,4.5,F1.7
-Resumo curto do documento,documentos,must,yes,no,,4.5,F1.7
-Lista e detalhe de documentos (S08 S09),documentos,must,yes,no,,4.5,F1.7
+Upload de documento PDF DOCX TXT MD (S10),documentos,must,yes,yes,"tipo confirmado pelos bytes do arquivo; até 20 MB",4.5,F1.7
+Coleções e metadados (código responsável vigência revisão tags),documentos,must,yes,yes,"código único por empresa",4.5,F1.7
+Status rascunho→em_revisao→aprovado→obsoleto,documentos,must,yes,yes,"operador envia para revisão; Qualidade ou acima aprova (provisório, P25)",4.5,F1.7
+Versões com obsolescência automática,documentos,must,yes,yes,"a anterior vira obsoleta quando a nova termina de processar, não antes",4.5,F1.7
+Ingestão: extração pdf-parse/mammoth,documentos,must,yes,yes,"unpdf (PDF por página) e mammoth (DOCX)",4.5,F1.7
+OCR com modelo de visão para PDF escaneado,documentos,must,yes,no,"PDF escaneado falha com mensagem clara; OCR entra no passo 1.9",4.5,F1.7
+Chunking por seção 500–800 tokens overlap 80,documentos,must,yes,yes,"itens numerados nunca são cortados; sobreposição só com itens inteiros",4.5,F1.7
+Embeddings com provedor configurável,documentos,must,yes,yes,"API compatível com OpenAI por env; 1536 dimensões (ADR-0007)",4.5,F1.7
+Resumo curto do documento,documentos,must,yes,yes,"modelo rápido, saída validada por zod, não bloqueia a ingestão",4.5,F1.7
+Lista e detalhe de documentos (S08 S09),documentos,must,yes,yes,"filtros por coleção, situação e revisão vencida; status de ingestão ao vivo",4.5,F1.7
 search_knowledge híbrida (pgvector + tsvector pt + RRF),rag,must,yes,no,,4.5,F1.8
 Filtro por tenant escopo e status aprovado,rag,must,yes,no,,4.5,F1.8
 Top 6 com limiar mínimo (vazio força handoff),rag,must,yes,no,,4.5,F1.8

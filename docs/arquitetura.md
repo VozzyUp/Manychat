@@ -174,6 +174,19 @@ flowchart LR
   A -->|versão anterior| O[obsoleto]
 ```
 
+### Ingestão na prática (passo 1.7)
+
+- **Quando:** ao aprovar. Rascunhos e versões em revisão não geram chunks nem custo de embeddings.
+- **Extração:** PDF por página (`unpdf`; sem texto = escaneado, falha com aviso até o OCR do 1.9), DOCX (`mammoth`
+  → markdown), TXT e MD. O tipo é confirmado pelos bytes, não só pela extensão.
+- **Seções:** títulos markdown, numeração (`4.2 Temperatura`) e `ANEXO A`; o caminho (`4 Procedimento > 4.2
+  Temperatura`) é o que aparece na citação.
+- **Chunks:** por seção, até 800 tokens, 80 de sobreposição, itens numerados inteiros. O texto enviado ao
+  embedding leva título e seção junto do conteúdo.
+- **Substituição segura:** a versão nova só vira a vigente (e a anterior obsoleta) quando termina de processar,
+  numa função SQL transacional. Falha → fica `failed` com o motivo, a anterior continua valendo, e um admin reprocessa.
+- **Custo:** embeddings e resumo gravam `ai_runs` (`ingest.embeddings`, `ingest.summary`).
+
 Busca híbrida numa função SQL: vetorial (cosseno) + full-text em português, combinadas por RRF, com
 limiar. Abaixo do limiar a busca devolve vazio — e vazio obriga o handoff.
 Ver [ADR-0005](adr/0005-busca-hibrida-em-sql.md).

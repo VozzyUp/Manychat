@@ -25,5 +25,14 @@ export const messages = {
   contactAnonymized: 'Este contato foi anonimizado e não pode mais ser alterado.',
   mediaRemovalFailed:
     'Não foi possível apagar os arquivos de mídia agora. Nada foi alterado; tente de novo em instantes.',
+  invalidDates: 'A data de revisão não pode ser anterior à data de vigência.',
+  documentMissing: 'Envie o arquivo do documento.',
+  documentType: 'Tipo de arquivo não aceito. Envie PDF, DOCX, TXT ou MD.',
+  documentSize: 'O arquivo é maior que 20 MB.',
+  documentIdentical: 'Este arquivo é idêntico à versão mais recente do documento.',
+  documentCodeExists: 'Já existe um documento com esse código.',
+  documentTransition: 'Essa mudança de situação não é permitida.',
+  documentApprove: 'Só a Qualidade (ou acima) aprova, devolve ou torna obsoleto um documento.',
+  documentReingest: 'Só versões aprovadas com falha ou pendentes podem ser reprocessadas.',
   noOpenHandoff: 'Não há atendimento humano aberto nesta conversa.',
 } as const;

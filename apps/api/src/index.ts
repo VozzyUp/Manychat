@@ -16,12 +16,21 @@ const inboundQueue = new Queue(QUEUES.inboundMessages, {
   defaultJobOptions: DEFAULT_JOB_OPTIONS[QUEUES.inboundMessages],
 });
 
+const ingestQueue = new Queue(QUEUES.ingestDocument, {
+  connection: redis,
+  prefix: env.QUEUE_PREFIX,
+  defaultJobOptions: DEFAULT_JOB_OPTIONS[QUEUES.ingestDocument],
+});
+
 const app = await buildApp({
   logger,
   reportError: reporter.capture,
   deps: createDeps(env, logger, {
     enqueueInbound: async (job, jobId) => {
       await inboundQueue.add('webhook', job, { jobId });
+    },
+    enqueueIngest: async (job, jobId) => {
+      await ingestQueue.add('ingest', job, { jobId });
     },
   }),
   checks: [
@@ -48,6 +57,7 @@ const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
   await app.close();
   await inboundQueue.close();
+  await ingestQueue.close();
   await reporter.flush();
   redis.disconnect();
   process.exit(0);

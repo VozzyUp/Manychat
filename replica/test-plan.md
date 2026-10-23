@@ -61,3 +61,18 @@ está automatizado. Cresce a cada passo de construção.
 | F06-E6 | | sem agente | conversa sem definição de agente | handoff `other`, nada de silêncio | core | passa |
 | F06-H2 | | classificador da equipe | mensagem de funcionário | módulo + confiança validados; saída inválida → null + ai_runs `error` | core | passa |
 | F06-H3 | | fiação no worker | webhook → turno → agente → envio | mensagem enviada e ai_runs com custo | worker (BullMQ real) | passa |
+| F05-H1 | ingestão | texto, seções e chunks | POP em TXT com seções numeradas | um chunk por seção com caminho citável; embeddings 1536; resumo; versão ativada | core (banco e Storage reais, embeddings e modelo simulados) | passa |
+| F05-H2 | | PDF | PDF com texto | lido por página, chunk com `page` | core | passa |
+| F05-E1 | | nova versão | v2 aprovada | v1 vale até v2 ficar pronta; depois v1 vira obsoleta e `current_version_id` muda | core + RLS | passa |
+| F05-E2 | | reprocessar | rodar de novo | chunks substituídos, não duplicados | core | passa |
+| F05-N1 | | arquivo ruim | PDF escaneado, vazio, sem embeddings configurados | `failed` com mensagem em pt-BR, sem nova tentativa | core | passa |
+| F05-E3 | | provedor fora do ar | 503 nos embeddings | tenta de novo; só a última tentativa marca `failed` | core | passa |
+| F05-E4 | | resumo falha | modelo devolve lixo | ingestão termina sem resumo | core | passa |
+| F05-U1 | | extração e chunking | itens inteiros, sobreposição, parágrafo gigante, DOCX→markdown | respeita 800 tokens e 80 de overlap | unidade | passa |
+| F05-U2 | | embeddings | lotes de 64, ordem, 429/5xx, dimensões erradas | tentativas e erros certos | unidade | passa |
+| S10-H1 | documento novo | upload | arquivo, metadados, tipo errado | rascunho criado; tipo recusado com mensagem; falha não deixa documento vazio | API + e2e | passa |
+| S09-H1 | documento | fluxo de aprovação | operador envia; Qualidade aprova | operador não vê "Aprovar"; aprovar enfileira a ingestão uma vez | API + e2e | passa |
+| S09-H2 | | versões | arquivo idêntico; v2; falha e reprocessar | "idêntico" recusado; v1 segue em uso; motivo da falha visível | API + e2e | passa |
+| S08-H1 | documentos | lista e filtros | coleção, situação, revisão vencida, busca | selos corretos e filtros aplicados; axe ok | e2e | passa |
+| S08-N1 | | leitor | abrir lista e /novo | sem botões de envio | e2e | passa |
+| RLS-doc | documentos | isolamento e guardas | outro tenant; saltos de status; arquivo trocado; ativação | nada vaza; transições inválidas barradas | `packages/db/tests` | passa |

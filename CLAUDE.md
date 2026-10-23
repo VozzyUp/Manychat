@@ -94,6 +94,7 @@ SENTRY_DSN=
 - [x] Fase 1 · Passo 4 — webhook WhatsApp: validação, fila, idempotência, mídia, envio de texto e template
 - [x] Fase 1 · Passo 5 — contatos, conversas, mensagens e roteamento
 - [x] Fase 1 · Passo 6 — motor de agentes: loop de tool use, `ai_runs`, `ai_tool_calls`, limites
-- [ ] Fase 1 · Passo 7 — documentos: upload, versões, aprovação, ingestão, chunking, embeddings
+- [x] Fase 1 · Passo 7 — documentos: upload, versões, aprovação, ingestão, chunking, embeddings
+- [ ] Fase 1 · Passo 8 — `search_knowledge` híbrida + validação de citação + tela "Testar a base"
 
 Mapa do sistema e plano: `replica/recon.md`, `replica/architecture.md`, `docs/`. Log por passo: `replica/build-log.md`.

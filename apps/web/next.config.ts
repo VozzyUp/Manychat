@@ -14,8 +14,8 @@ const config: NextConfig = {
   outputFileTracingRoot: root,
   transpilePackages: ['@nurion/shared', '@nurion/db'],
   poweredByHeader: false,
-  // Logo uploads go through a Server Action (limit 1 MB in the API).
-  experimental: { serverActions: { bodySizeLimit: '2mb' } },
+  // Logos (1 MB) and documents (20 MB, enforced by the API) are uploaded through Server Actions.
+  experimental: { serverActions: { bodySizeLimit: '21mb' } },
 };
 
 export default config;

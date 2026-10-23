@@ -16,3 +16,8 @@ migration). Cada chunk grava `embedding_model`; a busca usa só chunks do modelo
 ## Consequências
 
 - Trocar de provedor = job de reindexação + possível migration de dimensão. Documentado no runbook.
+
+## Situação (passo 1.7)
+
+Implementado: `createOpenAiEmbeddings` (qualquer API compatível com `/embeddings` via `EMBEDDINGS_BASE_URL`),
+sempre pedindo 1536 dimensões e recusando respostas com outro tamanho. Voyage não foi implementado (ver P29).

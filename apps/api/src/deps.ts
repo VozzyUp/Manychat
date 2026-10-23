@@ -10,6 +10,7 @@ import { createSecretBox, type Logger, type SecretBox } from '@nurion/shared';
 import type { ApiEnv } from './env';
 
 export type InboundJob = { body: string; receivedAt: string };
+export type IngestJob = { tenantId: string; versionId: string };
 
 /** Everything routes need from the outside world. Tests build the same thing against the local stack. */
 export type AppDeps = {
@@ -28,12 +29,14 @@ export type AppDeps = {
   };
   /** Puts a raw webhook body on the inbound-messages queue (dedup by `jobId`). */
   enqueueInbound: (job: InboundJob, jobId: string) => Promise<void>;
+  /** Starts the ingestion of an approved document version. */
+  enqueueIngest: (job: IngestJob, jobId: string) => Promise<void>;
 };
 
 export function createDeps(
   env: ApiEnv,
   logger: Logger,
-  queues: { enqueueInbound: AppDeps['enqueueInbound'] },
+  queues: Pick<AppDeps, 'enqueueInbound' | 'enqueueIngest'>,
 ): AppDeps {
   return {
     verifyToken: createAuthVerifier({ url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }),
@@ -54,5 +57,6 @@ export function createDeps(
       graph: { version: env.WHATSAPP_GRAPH_VERSION, baseUrl: env.WHATSAPP_GRAPH_BASE_URL },
     },
     enqueueInbound: queues.enqueueInbound,
+    enqueueIngest: queues.enqueueIngest,
   };
 }
