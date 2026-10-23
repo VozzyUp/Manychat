@@ -15,4 +15,9 @@ export const messages = {
   logoType: 'Envie o logo em PNG, JPG ou WEBP.',
   logoSize: 'O logo deve ter até 1 MB.',
   logoMissing: 'Nenhum arquivo enviado.',
+  vaultMissing: 'O cofre de tokens não está configurado (ENCRYPTION_KEY).',
+  metaRejected: 'A Meta não aceitou o token para este número',
+  numberTaken: 'Este número de WhatsApp já está cadastrado no Nurion Hub.',
+  numberHasHistory: 'Este número já tem conversas. Desative-o em vez de excluir.',
+  moduleNotEnabled: 'Esse módulo não está contratado pela empresa.',
 } as const;

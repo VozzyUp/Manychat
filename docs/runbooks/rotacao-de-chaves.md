@@ -4,7 +4,7 @@
 
 1. No Business Manager do cliente: Usuários do sistema → gerar novo token permanente com
    `whatsapp_business_messaging` e `whatsapp_business_management`.
-2. Painel → Config → WhatsApp (S21) → editar número → colar o token → "Testar" (passo 1.4).
+2. Painel → Configurações → WhatsApp (S21) → "Trocar o token" no número → colar o token novo (a Meta valida na hora).
 3. Se vazou: revogar o antigo no Business Manager.
 4. Reprocessar `outbound-messages` que falharam com erro 190 (`filas-e-dlq.md`).
 
@@ -12,7 +12,8 @@
 
 1. Gerar nova chave: `openssl rand -base64 32`.
 2. Configurar `ENCRYPTION_KEY` (nova) e `ENCRYPTION_KEY_PREVIOUS` (antiga) na api e no worker; reiniciar.
-3. Rodar a recifragem (passo 1.4): `pnpm --filter @nurion/worker crypto:rotate` — lê com a antiga, grava com a nova.
+3. Rodar a recifragem: `pnpm --filter @nurion/worker ops crypto:rotate` — lê com a antiga, grava com a nova
+   (mostra quantos tokens foram recifrados).
 4. Remover `ENCRYPTION_KEY_PREVIOUS` e reiniciar.
 
 **Desfazer:** enquanto `ENCRYPTION_KEY_PREVIOUS` existir, os dois formatos são lidos.

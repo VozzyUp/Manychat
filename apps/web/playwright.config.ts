@@ -1,9 +1,15 @@
+import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
 // The servers started below inherit the monorepo's .env (CI passes the same variables instead).
 const rootEnv = new URL('../../.env', import.meta.url).pathname;
 if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
+// The API talks to a fake Graph API in e2e, never to Meta.
+process.env.WHATSAPP_GRAPH_BASE_URL = 'http://localhost:4900';
+process.env.ENCRYPTION_KEY ||= randomBytes(32).toString('base64');
+process.env.WHATSAPP_APP_SECRET ||= 'e2e-app-secret';
+process.env.WHATSAPP_VERIFY_TOKEN ||= 'e2e-verify-token';
 
 /**
  * End-to-end tests of the panel against the local stack (Supabase + api + web).
@@ -38,6 +44,11 @@ export default defineConfig({
     },
   ],
   webServer: [
+    {
+      command: 'node e2e/fake-graph.mjs',
+      url: 'http://localhost:4900/health',
+      reuseExistingServer: true,
+    },
     {
       command: 'pnpm --filter @nurion/api exec tsx --env-file-if-exists=../../.env src/index.ts',
       url: 'http://localhost:4000/health',

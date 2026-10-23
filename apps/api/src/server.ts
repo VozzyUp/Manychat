@@ -10,6 +10,8 @@ export type ServerOptions = {
   checks?: ReadinessCheck[];
   /** Max time a readiness check may take before it counts as failed. */
   readinessTimeoutMs?: number;
+  /** Unexpected (500) errors go here too (Sentry in production). */
+  reportError?: (error: unknown, tags: Record<string, string>) => void;
 };
 
 export type App = FastifyInstance;
@@ -47,6 +49,10 @@ export async function buildServer(options: ServerOptions): Promise<App> {
       });
     }
     request.log.error({ err: error }, 'unhandled error');
+    options.reportError?.(error, {
+      request_id: String(request.id),
+      route: request.routeOptions.url ?? '',
+    });
     return reply.status(500).send({
       error: { code: 'internal_error', message: 'Internal error', request_id: request.id },
     });

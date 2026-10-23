@@ -54,9 +54,11 @@ Em produção, os modelos de e-mail de `supabase/templates/` precisam ser copiad
 | `ANTHROPIC_API_KEY`, `LLM_MODEL_*` | worker, api (Testar a base) | sua chave de desenvolvimento |
 | `EMBEDDINGS_*` | worker, api | idem |
 | `GROQ_API_KEY` | worker | idem |
-| `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | api | app Meta de desenvolvimento |
+| `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | api | `pnpm env:local` gera valores locais; para receber mensagens reais, use os do app Meta de desenvolvimento |
+| `WHATSAPP_GRAPH_VERSION` | api, worker | `v23.0` |
+| `QUEUE_PREFIX` | api, worker | `nurion` |
 | `CHATWOOT_URL`, `CHATWOOT_API_TOKEN` | worker | Chatwoot local ou de homologação |
-| `ENCRYPTION_KEY` | api, worker | `openssl rand -base64 32` |
+| `ENCRYPTION_KEY` | api, worker | `pnpm env:local` gera; em produção `openssl rand -base64 32` no cofre |
 | `SENTRY_DSN` | todos | vazio desliga |
 
 Sem chaves de IA/WhatsApp o sistema sobe; os testes usam mocks.
@@ -70,6 +72,14 @@ install chromium`) ou um já existente em `PW_CHROMIUM_PATH`.
 2. No app Meta de desenvolvimento: Webhooks → URL `https://<tunel>/webhooks/whatsapp`, token
    `WHATSAPP_VERIFY_TOKEN`, campo `messages`.
 3. Cadastre o número de teste da Meta no painel (Config → WhatsApp) do tenant de seed.
+
+## Operação local das filas
+
+```bash
+pnpm --filter @nurion/worker ops queues:stats     # tamanho de cada fila
+pnpm --filter @nurion/worker ops dlq:list         # jobs que falharam de vez
+pnpm --filter @nurion/worker ops dlq:retry        # reprocessar a dead-letter
+```
 
 ## Tarefas comuns
 

@@ -1,8 +1,10 @@
 // Prints (or writes into .env) the connection variables of the local Supabase stack.
 //
 //   node scripts/supabase-env.mjs            # KEY=VALUE lines (CI: >> $GITHUB_ENV)
-//   node scripts/supabase-env.mjs --write    # create/update .env from .env.example
+//   node scripts/supabase-env.mjs --write    # create/update .env from .env.example;
+//                                            # also fills empty local-only secrets
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 const status = JSON.parse(
@@ -27,13 +29,22 @@ if (!process.argv.includes('--write')) {
   process.exit(0);
 }
 
+// Local-only secrets, generated once (never reuse them in production).
+const generated = {
+  ENCRYPTION_KEY: randomBytes(32).toString('base64'),
+  WHATSAPP_VERIFY_TOKEN: `local-${randomBytes(8).toString('hex')}`,
+  WHATSAPP_APP_SECRET: `local-${randomBytes(16).toString('hex')}`,
+};
+
 const source = existsSync('.env') ? '.env' : '.env.example';
 let text = readFileSync(source, 'utf8');
-for (const [key, value] of Object.entries(values)) {
-  const line = `${key}=${value}`;
-  text = new RegExp(`^${key}=.*$`, 'm').test(text)
-    ? text.replace(new RegExp(`^${key}=.*$`, 'm'), line)
-    : `${text.trimEnd()}\n${line}\n`;
-}
+const set = (key, value, onlyIfEmpty) => {
+  const line = new RegExp(`^${key}=(.*)$`, 'm');
+  const match = line.exec(text);
+  if (match && onlyIfEmpty && match[1].trim()) return;
+  text = match ? text.replace(line, `${key}=${value}`) : `${text.trimEnd()}\n${key}=${value}\n`;
+};
+for (const [key, value] of Object.entries(values)) set(key, value, false);
+for (const [key, value] of Object.entries(generated)) set(key, value, true);
 writeFileSync('.env', text);
-console.log(`.env updated from ${source} with the local Supabase keys.`);
+console.log(`.env updated from ${source} with the local Supabase keys and local secrets.`);

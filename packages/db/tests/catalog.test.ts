@@ -105,3 +105,25 @@ describeDb('schema catalog rules (CLAUDE.md rule 1, ESCOPO §9)', () => {
     });
   });
 });
+
+describeDb('functions exposed through the API', () => {
+  afterAll(closePool);
+
+  /** Functions in public that panel users may call via RPC. Everything else is service-role only. */
+  const USER_CALLABLE: string[] = [];
+
+  it('no public function is executable by anon or authenticated unless allow-listed', async () => {
+    await inRollback(async (db) => {
+      const { rows } = await db.query<{ name: string; role: string }>(
+        `select p.proname as name, r.rolname as role
+           from pg_proc p
+           join pg_namespace n on n.oid = p.pronamespace
+           cross join (values ('anon'), ('authenticated')) as r (rolname)
+          where n.nspname = 'public'
+            and has_function_privilege(r.rolname, p.oid, 'execute')`,
+      );
+      const exposed = rows.filter((r) => r.role === 'anon' || !USER_CALLABLE.includes(r.name));
+      expect(exposed.map((r) => `${r.name} (${r.role})`)).toEqual([]);
+    });
+  });
+});

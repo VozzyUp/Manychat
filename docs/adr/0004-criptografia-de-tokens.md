@@ -10,8 +10,8 @@ de cada tenant ficam criptografados no banco.
 ## Decisão
 
 AES-256-GCM em `packages/shared/crypto`, chave `ENCRYPTION_KEY` (32 bytes em base64) só no ambiente de
-api e worker. Formato salvo: `v1.<iv>.<tag>.<ciphertext>` (base64url). O prefixo de versão permite
-rotacionar a chave (runbook `rotacao-de-chaves.md`).
+api e worker. Formato salvo: `v1.<keyId>.<iv>.<tag>.<ciphertext>` (base64url). O `keyId` (8 hex do SHA-256 da chave)
+diz qual chave cifrou, o que permite rotacionar com `ENCRYPTION_KEY_PREVIOUS` (runbook `rotacao-de-chaves.md`).
 
 ## Alternativas
 

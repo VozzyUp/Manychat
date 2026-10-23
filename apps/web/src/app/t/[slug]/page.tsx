@@ -13,10 +13,16 @@ export default async function TenantHome({ params }: { params: Promise<{ slug: s
   const { slug } = await params;
   const { tenant, role } = await getTenantContext(slug);
   const supabase = await createSupabaseServerClient();
-  const { count: members } = await supabase
-    .from('tenant_members')
-    .select('id', { count: 'exact', head: true })
-    .eq('tenant_id', tenant.id);
+  const [{ count: members }, { count: numbers }] = await Promise.all([
+    supabase
+      .from('tenant_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenant.id),
+    supabase
+      .from('whatsapp_numbers')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenant.id),
+  ]);
 
   const steps = [
     { done: (members ?? 0) > 1, label: 'Convidar a equipe', href: `/t/${slug}/config/membros` },
@@ -25,7 +31,11 @@ export default async function TenantHome({ params }: { params: Promise<{ slug: s
       label: 'Colocar o logo e as cores da empresa',
       href: `/t/${slug}/config`,
     },
-    { done: false, label: 'Conectar o número de WhatsApp', soon: true },
+    {
+      done: (numbers ?? 0) > 0,
+      label: 'Conectar o número de WhatsApp',
+      href: `/t/${slug}/config/whatsapp`,
+    },
     { done: false, label: 'Enviar os documentos aprovados (POPs, manuais)', soon: true },
   ];
   const canConfigure = roleAtLeast(role, 'admin');

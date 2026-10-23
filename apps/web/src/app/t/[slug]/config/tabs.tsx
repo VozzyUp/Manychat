@@ -10,6 +10,8 @@ export function ConfigTabs({ base }: { base: string }) {
     { href: base, label: 'Geral e marca' },
     { href: `${base}/membros`, label: 'Equipe' },
     { href: `${base}/modulos`, label: 'Módulos e setores' },
+    { href: `${base}/whatsapp`, label: 'WhatsApp' },
+    { href: `${base}/templates`, label: 'Templates' },
   ];
   return (
     <nav

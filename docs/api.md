@@ -139,3 +139,24 @@ entra em `branding.logo_url`. Erros: `400` tipo inválido, `413` grande demais.
 | `POST /v1/departments` | `{ "name" }` | `201 { id, name }`; `409` nome repetido |
 | `PATCH /v1/departments/:id` | `{ "name" }` | `200`; `404` |
 | `DELETE /v1/departments/:id` | — | `204`; `409` em uso |
+
+### WhatsApp: números (admin)
+
+O token nunca volta nas respostas nem é legível pelo painel (privilégio de coluna no banco). Antes de salvar,
+a API confere o token com a Meta (`GET /{phone_number_id}`); depois cifra com AES-256-GCM.
+
+| rota | corpo | respostas |
+| --- | --- | --- |
+| `POST /v1/whatsapp-numbers` | `{ "phone_number_id", "waba_id", "access_token", "display_number"?, "default_module"? }` | `201` número (com `token_last4`, `verified_name`); `422` a Meta recusou o token; `409` número já cadastrado (em qualquer tenant); `400` módulo não contratado |
+| `PATCH /v1/whatsapp-numbers/:id` | `{ "display_number"?, "default_module"?, "status"?: "active"\|"disabled", "access_token"? }` | `200`; trocar o token passa de novo pela Meta |
+| `POST /v1/whatsapp-numbers/:id/check` | — | `200` com `verified_at` atualizado; `422` se a Meta recusar |
+| `DELETE /v1/whatsapp-numbers/:id` | — | `204`; `409` se o número já tem conversas (desative em vez de excluir) |
+
+### WhatsApp: templates (admin)
+
+| rota | corpo | respostas |
+| --- | --- | --- |
+| `POST /v1/whatsapp-templates` | `{ "waba_id", "name", "language"?: "pt_BR", "category", "body" }` | `201` (status `pending`, `variables_count` calculado de `{{n}}`) |
+| `PATCH /v1/whatsapp-templates/:id` | `{ "category"?, "body"? }` | `200` |
+| `DELETE /v1/whatsapp-templates/:id` | — | `204` (remove só do Nurion Hub) |
+| `POST /v1/whatsapp-templates/sync` | — | `200 { synced, wabas }`: nomes, corpos e status de aprovação vindos da Meta |

@@ -372,3 +372,39 @@ describeDb('optional 2FA is enforced by RLS (ESCOPO §2)', () => {
     });
   });
 });
+
+describeDb('WhatsApp data (ESCOPO §4.2, ADR-0004)', () => {
+  afterAll(closePool);
+
+  it('panel users never read the encrypted WhatsApp token, but see the rest', async () => {
+    await inRollback(async (db) => {
+      const world = await createWorld(db);
+      await db.query(
+        `insert into whatsapp_numbers (tenant_id, phone_number_id, waba_id, display_number, access_token_enc, token_last4)
+         values ($1, '1234567890', '9876543210', '+55 11 90000-0000', 'v1.secret', 'abcd')`,
+        [world.tenants.A],
+      );
+      await asUser(db, world.users.ownerA);
+      await expectSqlError(db, '42501', `select access_token_enc from whatsapp_numbers`);
+      await expectSqlError(db, '42501', `select * from whatsapp_numbers`);
+      expect(
+        await rows(db, `select id, token_last4, display_number from whatsapp_numbers`),
+      ).toHaveLength(1);
+    });
+  });
+
+  it('messages and conversations are written only by the worker', async () => {
+    await inRollback(async (db) => {
+      const world = await createWorld(db);
+      await asUser(db, world.users.ownerA);
+      await expectSqlError(
+        db,
+        '42501',
+        `insert into conversations (tenant_id, contact_id, whatsapp_number_id) values ($1, gen_random_uuid(), gen_random_uuid())`,
+        [world.tenants.A],
+      );
+      await expectSqlError(db, '42501', `update messages set text = 'x'`);
+      await expectSqlError(db, '42501', `delete from messages`);
+    });
+  });
+});

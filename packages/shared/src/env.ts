@@ -46,6 +46,18 @@ export const envFragments = {
   supabaseService: {
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   },
+  crypto: {
+    ENCRYPTION_KEY: z.string().min(40, 'ENCRYPTION_KEY: openssl rand -base64 32'),
+    ENCRYPTION_KEY_PREVIOUS: z.string().optional(),
+  },
+  whatsapp: {
+    WHATSAPP_APP_SECRET: z.string().min(1),
+    WHATSAPP_VERIFY_TOKEN: z.string().min(8),
+    WHATSAPP_GRAPH_VERSION: z
+      .string()
+      .regex(/^v\d+\.\d+$/)
+      .default('v23.0'),
+  },
   llm: {
     ANTHROPIC_API_KEY: z.string().min(1),
     LLM_MODEL_AGENT: z.string().min(1),

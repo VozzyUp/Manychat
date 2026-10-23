@@ -14,9 +14,11 @@ alerta de latência do webhook.
    - `401 invalid_signature`: `WHATSAPP_APP_SECRET` diferente do app secret do app Meta. Corrija o env e reinicie a api.
    - `GET` de verificação falhando: `WHATSAPP_VERIFY_TOKEN` diferente do configurado na Meta.
 3. **A fila está andando?** Veja `filas-e-dlq.md`. Fila `inbound-messages` crescendo = worker parado ou lento.
-4. **O tenant foi resolvido?** Log `inbound.unknown_phone_number_id` = número não cadastrado em
-   Config → WhatsApp (S21) do tenant certo.
-5. **Duplicadas:** `messages.wamid` é único; duplicata no WhatsApp do contato indica reenvio do nosso lado.
+4. **O tenant foi resolvido?** Log do worker `inbound for unknown or disabled number` (com o
+   `phone_number_id`) = número não cadastrado, ou desativado, em Configurações → WhatsApp (S21).
+5. **Mídia não aparece?** `message_media.status = 'failed'` com o erro em `message_media.error`. O job
+   re-tenta sozinho (a URL da Meta expira em minutos; depois disso só pedindo o reenvio ao contato).
+6. **Duplicadas:** `messages.wamid` é único; duplicata no WhatsApp do contato indica reenvio do nosso lado.
    Procure o mesmo `conversation_id` com dois `ai_runs` no mesmo segundo e veja o lock de turno (ADR-0008).
 
 ## Correção

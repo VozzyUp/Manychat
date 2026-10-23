@@ -101,11 +101,32 @@ function createSystemQueries(raw: DbClient) {
       if (error) throw error;
       return data.user.id;
     },
+    /** Every tenant id, active or not (maintenance such as key rotation). */
+    async listAllTenantIds(): Promise<string[]> {
+      const { data, error } = await raw.from('tenants').select('id');
+      if (error) throw error;
+      return data.map((t) => t.id);
+    },
     /** Tenant ids that are active (scheduled jobs iterate over these). */
     async listActiveTenantIds(): Promise<string[]> {
       const { data, error } = await raw.from('tenants').select('id').eq('status', 'active');
       if (error) throw error;
       return data.map((t) => t.id);
+    },
+    /**
+     * The WhatsApp number a webhook belongs to (ESCOPO §4.3 step 1: resolve the tenant by
+     * phone_number_id). Includes the encrypted token, so it never leaves the worker/API.
+     */
+    async findWhatsappNumber(phoneNumberId: string) {
+      const { data, error } = await raw
+        .from('whatsapp_numbers')
+        .select(
+          'id, tenant_id, phone_number_id, waba_id, display_number, access_token_enc, default_module, status',
+        )
+        .eq('phone_number_id', phoneNumberId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
     },
     /** Name, branding and settings of one tenant (worker builds agent context with it). */
     async getTenant(tenantId: string) {

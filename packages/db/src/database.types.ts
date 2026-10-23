@@ -43,6 +43,125 @@ export type Database = {
         };
         Relationships: [];
       };
+      contacts: {
+        Row: {
+          anonymized_at: string | null;
+          created_at: string;
+          id: string;
+          kind: string;
+          metadata: NonNullable<Json>;
+          name: string | null;
+          profile_name: string | null;
+          tenant_id: string;
+          updated_at: string;
+          user_id: string | null;
+          wa_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          anonymized_at?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          metadata?: NonNullable<Json>;
+          name?: string | null;
+          profile_name?: string | null;
+          tenant_id: string;
+          updated_at?: string;
+          user_id?: string | null;
+          wa_id: string;
+        };
+        Update: {
+          anonymized_at?: string | null;
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          metadata?: NonNullable<Json>;
+          name?: string | null;
+          profile_name?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          wa_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'contacts_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      conversations: {
+        Row: {
+          agent_key: string | null;
+          contact_id: string;
+          created_at: string;
+          id: string;
+          last_inbound_at: string | null;
+          last_message_at: string | null;
+          module: string | null;
+          state: NonNullable<Json>;
+          state_expires_at: string | null;
+          tenant_id: string;
+          updated_at: string;
+          whatsapp_number_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent_key?: string | null;
+          contact_id: string;
+          created_at?: string;
+          id?: string;
+          last_inbound_at?: string | null;
+          last_message_at?: string | null;
+          module?: string | null;
+          state?: NonNullable<Json>;
+          state_expires_at?: string | null;
+          tenant_id: string;
+          updated_at?: string;
+          whatsapp_number_id: string;
+        };
+        Update: {
+          agent_key?: string | null;
+          contact_id?: string;
+          created_at?: string;
+          id?: string;
+          last_inbound_at?: string | null;
+          last_message_at?: string | null;
+          module?: string | null;
+          state?: NonNullable<Json>;
+          state_expires_at?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+          whatsapp_number_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'conversations_tenant_id_contact_id_fkey';
+            columns: ['tenant_id', 'contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'contacts';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'conversations_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'conversations_tenant_id_whatsapp_number_id_fkey';
+            columns: ['tenant_id', 'whatsapp_number_id'];
+            isOneToOne: false;
+            referencedRelation: 'whatsapp_numbers';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+        ];
+      };
       departments: {
         Row: {
           created_at: string;
@@ -69,6 +188,146 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'departments_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      message_media: {
+        Row: {
+          created_at: string;
+          error: string | null;
+          filename: string | null;
+          id: string;
+          media_id: string | null;
+          message_id: string;
+          mime: string | null;
+          sha256: string | null;
+          size: number | null;
+          status: string;
+          storage_path: string | null;
+          tenant_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          error?: string | null;
+          filename?: string | null;
+          id?: string;
+          media_id?: string | null;
+          message_id: string;
+          mime?: string | null;
+          sha256?: string | null;
+          size?: number | null;
+          status?: string;
+          storage_path?: string | null;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          error?: string | null;
+          filename?: string | null;
+          id?: string;
+          media_id?: string | null;
+          message_id?: string;
+          mime?: string | null;
+          sha256?: string | null;
+          size?: number | null;
+          status?: string;
+          storage_path?: string | null;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'message_media_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'message_media_tenant_id_message_id_fkey';
+            columns: ['tenant_id', 'message_id'];
+            isOneToOne: false;
+            referencedRelation: 'messages';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+        ];
+      };
+      messages: {
+        Row: {
+          author: string;
+          conversation_id: string;
+          created_at: string;
+          direction: string;
+          error: Json | null;
+          id: string;
+          payload: NonNullable<Json>;
+          processed_at: string | null;
+          raw: Json | null;
+          sent_at: string | null;
+          status: string;
+          tenant_id: string;
+          text: string | null;
+          transcription: string | null;
+          type: string;
+          updated_at: string;
+          wamid: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          author?: string;
+          conversation_id: string;
+          created_at?: string;
+          direction: string;
+          error?: Json | null;
+          id?: string;
+          payload?: NonNullable<Json>;
+          processed_at?: string | null;
+          raw?: Json | null;
+          sent_at?: string | null;
+          status?: string;
+          tenant_id: string;
+          text?: string | null;
+          transcription?: string | null;
+          type: string;
+          updated_at?: string;
+          wamid?: string | null;
+        };
+        Update: {
+          author?: string;
+          conversation_id?: string;
+          created_at?: string;
+          direction?: string;
+          error?: Json | null;
+          id?: string;
+          payload?: NonNullable<Json>;
+          processed_at?: string | null;
+          raw?: Json | null;
+          sent_at?: string | null;
+          status?: string;
+          tenant_id?: string;
+          text?: string | null;
+          transcription?: string | null;
+          type?: string;
+          updated_at?: string;
+          wamid?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'messages_tenant_id_conversation_id_fkey';
+            columns: ['tenant_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'conversations';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'messages_tenant_id_fkey';
             columns: ['tenant_id'];
             isOneToOne: false;
             referencedRelation: 'tenants';
@@ -296,12 +555,164 @@ export type Database = {
           },
         ];
       };
+      whatsapp_numbers: {
+        Row: {
+          access_token_enc: string;
+          created_at: string;
+          default_module: string | null;
+          display_number: string;
+          id: string;
+          phone_number_id: string;
+          status: string;
+          tenant_id: string;
+          token_last4: string;
+          updated_at: string;
+          verified_at: string | null;
+          verified_name: string | null;
+          waba_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          access_token_enc: string;
+          created_at?: string;
+          default_module?: string | null;
+          display_number: string;
+          id?: string;
+          phone_number_id: string;
+          status?: string;
+          tenant_id: string;
+          token_last4?: string;
+          updated_at?: string;
+          verified_at?: string | null;
+          verified_name?: string | null;
+          waba_id: string;
+        };
+        Update: {
+          access_token_enc?: string;
+          created_at?: string;
+          default_module?: string | null;
+          display_number?: string;
+          id?: string;
+          phone_number_id?: string;
+          status?: string;
+          tenant_id?: string;
+          token_last4?: string;
+          updated_at?: string;
+          verified_at?: string | null;
+          verified_name?: string | null;
+          waba_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'whatsapp_numbers_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      whatsapp_templates: {
+        Row: {
+          body: string;
+          category: string;
+          components: NonNullable<Json>;
+          created_at: string;
+          id: string;
+          language: string;
+          last_synced_at: string | null;
+          meta_template_id: string | null;
+          name: string;
+          rejected_reason: string | null;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+          variables_count: number;
+          waba_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          body?: string;
+          category: string;
+          components?: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          language?: string;
+          last_synced_at?: string | null;
+          meta_template_id?: string | null;
+          name: string;
+          rejected_reason?: string | null;
+          status?: string;
+          tenant_id: string;
+          updated_at?: string;
+          variables_count?: number;
+          waba_id: string;
+        };
+        Update: {
+          body?: string;
+          category?: string;
+          components?: NonNullable<Json>;
+          created_at?: string;
+          id?: string;
+          language?: string;
+          last_synced_at?: string | null;
+          meta_template_id?: string | null;
+          name?: string;
+          rejected_reason?: string | null;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+          variables_count?: number;
+          waba_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'whatsapp_templates_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      apply_message_status: {
+        Args: {
+          p_at: string;
+          p_errors?: Json;
+          p_pricing?: Json;
+          p_status: string;
+          p_tenant_id: string;
+          p_wamid: string;
+        };
+        Returns: boolean;
+      };
+      record_inbound_message: {
+        Args: {
+          p_media?: Json;
+          p_payload: Json;
+          p_profile_name?: string;
+          p_raw: Json;
+          p_sent_at: string;
+          p_tenant_id: string;
+          p_text?: string;
+          p_type: string;
+          p_wa_id: string;
+          p_wamid: string;
+          p_whatsapp_number_id: string;
+        };
+        Returns: {
+          contact_id: string;
+          conversation_id: string;
+          inserted: boolean;
+          media_row_id: string;
+          message_id: string;
+        }[];
+      };
     };
     Enums: {
       app_role: 'viewer' | 'operator' | 'quality' | 'manager' | 'admin' | 'owner';

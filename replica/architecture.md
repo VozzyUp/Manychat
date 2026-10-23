@@ -66,6 +66,17 @@ service role cru não sai de `packages/db`, e o lint proíbe `@supabase/supabase
 Invariantes críticas ficam no banco (funções SQL `security invoker`, constraints), não só na API:
 aprovar versão de documento, transições de status de NC, unicidade de `wamid`.
 
+Funções do worker (só `service_role` executa; um teste de catálogo falha se alguma função de `public` ficar
+executável por `anon`/`authenticated` sem estar numa lista de permitidas):
+
+- `record_inbound_message(...)`: numa transação, faz upsert do contato e da conversa, insere a mensagem
+  (`wamid` repetido é ignorado) e a linha de mídia pendente; devolve se inseriu e a mídia que falta baixar.
+- `apply_message_status(...)`: aplica sent/delivered/read/failed sem regredir (um "delivered" atrasado não
+  apaga um "read") e guarda o `pricing` da Meta.
+
+Excluir um número com histórico é bloqueado (FK `no action`); o certo é desativá-lo. Excluir o tenant inteiro
+continua apagando tudo em cascata.
+
 ## Schema
 
 Tabelas: **55** (29 núcleo, 9 Log, 7 Labs, 6 Consult, 4 ADM — lista em `recon.md`).

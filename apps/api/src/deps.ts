@@ -6,8 +6,10 @@ import {
   type ServiceDb,
   type VerifiedUser,
 } from '@nurion/db';
-import type { Logger } from '@nurion/shared';
+import { createSecretBox, type Logger, type SecretBox } from '@nurion/shared';
 import type { ApiEnv } from './env';
+
+export type InboundJob = { body: string; receivedAt: string };
 
 /** Everything routes need from the outside world. Tests build the same thing against the local stack. */
 export type AppDeps = {
@@ -17,9 +19,22 @@ export type AppDeps = {
   /** Service role, only through withTenant() / system (ADR-0001). */
   serviceDb: ServiceDb;
   webUrl: string;
+  /** Token vault for third-party secrets (ADR-0004); null when ENCRYPTION_KEY is not configured. */
+  secrets: SecretBox | null;
+  whatsapp: {
+    appSecret?: string;
+    verifyToken?: string;
+    graph: { version: string; baseUrl?: string; fetch?: typeof fetch };
+  };
+  /** Puts a raw webhook body on the inbound-messages queue (dedup by `jobId`). */
+  enqueueInbound: (job: InboundJob, jobId: string) => Promise<void>;
 };
 
-export function createDeps(env: ApiEnv, logger: Logger): AppDeps {
+export function createDeps(
+  env: ApiEnv,
+  logger: Logger,
+  queues: { enqueueInbound: AppDeps['enqueueInbound'] },
+): AppDeps {
   return {
     verifyToken: createAuthVerifier({ url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }),
     userDb: (accessToken) =>
@@ -30,5 +45,14 @@ export function createDeps(env: ApiEnv, logger: Logger): AppDeps {
       onTenantViolation: (error) => logger.error({ err: error }, 'tenant scope violation'),
     }),
     webUrl: env.WEB_URL,
+    secrets: env.ENCRYPTION_KEY
+      ? createSecretBox({ key: env.ENCRYPTION_KEY, previousKey: env.ENCRYPTION_KEY_PREVIOUS })
+      : null,
+    whatsapp: {
+      appSecret: env.WHATSAPP_APP_SECRET,
+      verifyToken: env.WHATSAPP_VERIFY_TOKEN,
+      graph: { version: env.WHATSAPP_GRAPH_VERSION, baseUrl: env.WHATSAPP_GRAPH_BASE_URL },
+    },
+    enqueueInbound: queues.enqueueInbound,
   };
 }

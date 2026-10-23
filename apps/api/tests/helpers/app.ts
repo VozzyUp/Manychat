@@ -1,19 +1,35 @@
-import { createLogger } from '@nurion/shared';
+import { randomBytes } from 'node:crypto';
+import { createLogger, createSecretBox } from '@nurion/shared';
 import { buildApp } from '../../src/app';
-import { createDeps } from '../../src/deps';
+import { createDeps, type AppDeps, type InboundJob } from '../../src/deps';
 import { loadApiEnv } from '../../src/env';
 import { stack } from './stack';
 
-export async function buildTestApp() {
+export const TEST_APP_SECRET = 'test-app-secret';
+export const TEST_VERIFY_TOKEN = 'test-verify-token';
+
+/** The API wired to the local stack. Enqueued webhook jobs are captured in `enqueued`. */
+export async function buildTestApp(overrides: Partial<AppDeps> = {}) {
   const env = loadApiEnv({
     SUPABASE_URL: stack.url,
     SUPABASE_ANON_KEY: stack.anonKey,
     SUPABASE_SERVICE_ROLE_KEY: stack.serviceKey,
     WEB_URL: 'http://localhost:3000',
     LOG_LEVEL: 'silent',
+    WHATSAPP_APP_SECRET: TEST_APP_SECRET,
+    WHATSAPP_VERIFY_TOKEN: TEST_VERIFY_TOKEN,
   });
   const logger = createLogger('api-test', { level: 'silent' });
-  return buildApp({ logger, deps: createDeps(env, logger) });
+  const enqueued: { job: InboundJob; jobId: string }[] = [];
+  const deps: AppDeps = {
+    ...createDeps(env, logger, {
+      enqueueInbound: async (job, jobId) => void enqueued.push({ job, jobId }),
+    }),
+    secrets: createSecretBox({ key: randomBytes(32).toString('base64') }),
+    ...overrides,
+  };
+  const app = await buildApp({ logger, deps });
+  return Object.assign(app, { enqueued, deps });
 }
 
 export const as = (token: string, tenantId?: string) => ({

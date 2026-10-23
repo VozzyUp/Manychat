@@ -9,6 +9,10 @@ Formato da skill replica-test. Só entra o que foi reproduzido.
 | B003 | S3 | marca white-label | cor primária de tom médio (ex.: #808080 escuro) | texto do botão legível | com o "quase preto" do painel o contraste ficava abaixo de 4,5:1 em alguns tons | corrigido (cai para preto puro); teste varre o espaço de cores |
 | B004 | S3 | auditoria (trigger) | qualquer alteração em tenants | linha em audit_log | `TG_ARGV` nulo sem argumentos zerava o JSON e falhava o insert | corrigido no passo 1.2; coberto pelos testes de RLS |
 
+| B005 | S1 (evitado) | modelo de dados | excluir um número de WhatsApp com conversas | bloquear | a FK em cascata apagaria todo o histórico de conversas | corrigido antes de subir (FK `no action`); API devolve 409 e o painel sugere desativar |
+| B006 | S2 | migration de templates | aplicar a migration | sucesso | `{1,512}` em regex excede o limite do Postgres (255) | corrigido; pego pelo teste de isolamento |
+| B007 | S2 | `record_inbound_message` | gravar mensagem | sucesso | coluna de saída `contact_id` ambígua no PL/pgSQL | corrigido (`#variable_conflict use_column`); pego pelos testes do canal |
+
 ## A conferir
 
 - Na primeira execução do e2e, o axe acusou uma violação de contraste em S19 e S20 que não se repetiu em

@@ -1,17 +1,37 @@
-import { createLogger } from '@nurion/shared';
-import type { Worker } from 'bullmq';
+import { createErrorReporter } from '@nurion/core';
+import { createServiceDb } from '@nurion/db';
+import { createLogger, createSecretBox } from '@nurion/shared';
 import { Redis } from 'ioredis';
 import { loadWorkerEnv } from './env';
 import { createHealthServer } from './health';
 import { buildRegistry } from './modules';
+import { startWorkers } from './workers';
 
 const env = loadWorkerEnv();
 const logger = createLogger('worker', { level: env.LOG_LEVEL });
 const connection = new Redis(env.REDIS_URL, { maxRetriesPerRequest: null });
-
 const registry = buildRegistry();
-// Queue processors are attached here as the build steps land (inbound-messages in step 1.4, ...).
-const workers: Worker[] = [];
+const reporter = createErrorReporter(env.SENTRY_DSN, 'worker');
+
+const { close } = startWorkers({
+  connection,
+  prefix: env.QUEUE_PREFIX,
+  concurrency: env.WORKER_CONCURRENCY,
+  logger,
+  reportError: reporter.capture,
+  ctx: {
+    db: createServiceDb({
+      url: env.SUPABASE_URL,
+      serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+      onTenantViolation: (error) => logger.error({ err: error }, 'tenant scope violation'),
+    }),
+    secrets: createSecretBox({ key: env.ENCRYPTION_KEY, previousKey: env.ENCRYPTION_KEY_PREVIOUS }),
+    graph: { version: env.WHATSAPP_GRAPH_VERSION, baseUrl: env.WHATSAPP_GRAPH_BASE_URL },
+    logger,
+  },
+  // The router (build step 1.5) schedules agent turns from here.
+  onInbound: undefined,
+});
 
 const health = createHealthServer(async () => (await connection.ping()) === 'PONG');
 health.listen(env.WORKER_HEALTH_PORT, () => {
@@ -23,7 +43,8 @@ health.listen(env.WORKER_HEALTH_PORT, () => {
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
-  await Promise.all(workers.map((w) => w.close()));
+  await close();
+  await reporter.flush();
   health.close();
   connection.disconnect();
   process.exit(0);

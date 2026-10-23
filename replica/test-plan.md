@@ -24,3 +24,15 @@ está automatizado. Cresce a cada passo de construção.
 | S23-H1 | setores | feliz | criar, renomear, excluir | lista atualizada | e2e + API | passa |
 | S03-M1 | celular | 390 px | abrir menu | menu abre, sem rolagem horizontal | e2e (Pixel 7) | passa |
 | RLS-* | isolamento | todas as tabelas | dono do tenant A contra dados de B | nada lido/alterado/criado | `packages/db/tests` | passa |
+| F03-H1 | mensagem recebida | feliz | webhook assinado → fila → worker | contato, conversa e mensagem gravados | API + core + worker (BullMQ real) | passa |
+| F03-E1 | | webhook repetido | mesmo corpo duas vezes | um job (jobId), uma mensagem (wamid) | API + core | passa |
+| F03-E2 | | assinatura errada | corpo com HMAC de outro segredo | 401, nada na fila | API | passa |
+| F03-E3 | | número desconhecido | phone_number_id não cadastrado | ignorado com log, nada gravado | core | passa |
+| F03-E4 | | mídia expirada/fora | download falha | mensagem salva, mídia `failed`, job re-tenta e conclui | core | passa |
+| F03-E5 | | status antes da mensagem | "sent" de wamid desconhecido | re-tenta 3 vezes e desiste | core | passa |
+| F07-H1 | template fora da janela | feliz | conversa há 25 h, enviar template | enviado | core | passa |
+| F07-N1 | | texto fora da janela | conversa há 25 h, enviar texto | `failed: outside_window`, Meta não é chamada | core | passa |
+| F07-N2 | | erro permanente da Meta | 131026 | sem nova tentativa, dead-letter, mensagem `failed` | core + worker | passa |
+| S21-H1 | números | feliz | conectar número, testar, desativar | token validado, nunca exibido | e2e + API | passa |
+| S21-N1 | | token recusado | token inválido | mensagem citando a Meta | e2e + API | passa |
+| S22-H1 | templates | sincronizar | botão sincronizar | status de aprovação da Meta | e2e + API | passa |
