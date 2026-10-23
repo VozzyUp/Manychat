@@ -3,11 +3,11 @@ Monorepo pnpm + Turborepo com TypeScript strict,infra,must,yes,yes,,2,F1.1
 Lint + bloqueio de import entre módulos,infra,must,yes,yes,eslint no-restricted-imports + scripts/check-boundaries.mjs,3,F1.1
 CI no GitHub Actions (lint typecheck testes),infra,must,yes,yes,.github/workflows/ci.yml,2,F1.1
 Ambiente local com Supabase CLI + Redis,infra,must,yes,yes,supabase db start / supabase start + infra/docker-compose.yml,11,F1.1
-Parceiros tenants e membros com papéis,multiempresa,must,yes,no,owner admin manager quality operator viewer,4.1,F1.2
-RLS em toda tabela de negócio via tenant_members,multiempresa,must,yes,no,,4.1,F1.2
-Teste automatizado de RLS por tabela (A não lê B),multiempresa,must,yes,no,,10,F1.2
-Helper withTenant obrigatório no worker,multiempresa,must,yes,no,,4.1,F1.2
-Módulos ativos por tenant (tenant_modules),multiempresa,must,yes,no,,4.1,F1.2
+Parceiros tenants e membros com papéis,multiempresa,must,yes,yes,"partners, partner_members, tenants, tenant_members com app_role; guardas de último owner e de campos do parceiro",4.1,F1.2
+RLS em toda tabela de negócio via tenant_members,multiempresa,must,yes,yes,funções app.is_member/has_role; teste de catálogo falha se tabela sem RLS,4.1,F1.2
+Teste automatizado de RLS por tabela (A não lê B),multiempresa,must,yes,yes,packages/db/tests: tabelas descobertas no catálogo; fixture obrigatória por tabela,10,F1.2
+Helper withTenant obrigatório no worker,multiempresa,must,yes,yes,guarda HTTP no fetch do supabase-js; db.system para buscas entre tenants,4.1,F1.2
+Módulos ativos por tenant (tenant_modules),multiempresa,must,yes,yes,só o parceiro liga/desliga; tenant ajusta settings,4.1,F1.2
 Login e-mail + senha (S01),painel,must,yes,no,,2,F1.3
 2FA opcional (TOTP),painel,should,yes,no,Supabase Auth MFA,2,F1.3
 Troca de tenant no painel (S02 + seletor),painel,must,yes,no,,4.1,F1.3
@@ -66,8 +66,8 @@ handoff_to_human abre conversa no Chatwoot com resumo,handoff,must,yes,no,,4.7,F
 Mensagens do Chatwoot saem pelo WhatsApp,handoff,must,yes,no,,4.7,F1.10
 Resolver no Chatwoot devolve para a IA,handoff,must,yes,no,,4.7,F1.10
 Caixa de atendimento própria no painel,handoff,could,yes,no,ETAPA 2,4.7,E2
-audit_log de toda ação no painel (antes/depois),auditoria,must,yes,no,trigger no banco,4.8,F1.11
-Logs imutáveis para usuários,auditoria,must,yes,no,,4.8,F1.11
+audit_log de toda ação no painel (antes/depois),auditoria,must,yes,partial,trigger e tabela prontos nas tabelas do núcleo; tela e export no passo 1.11,4.8,F1.11
+Logs imutáveis para usuários,auditoria,must,yes,partial,audit_log sem update/delete para todos os papéis; demais logs nos próximos passos,4.8,F1.11
 Exportação CSV por período (S17),auditoria,must,yes,no,,4.8,F1.11
 Não conformidades com ciclo e ações (S13 S14),ncs,must,yes,no,,7.2,F1.11
 Tool create_nonconformity,ncs,must,yes,no,,4.4,F1.11

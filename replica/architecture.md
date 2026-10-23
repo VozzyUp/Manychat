@@ -55,9 +55,13 @@ apps montam o registro com os módulos ativos. O core nunca conhece um módulo p
 | worker e webhooks | service role **só via `withTenant(tenantId)`** | filtro explícito de `tenant_id` em toda query |
 | testes de RLS | `pg` direto com `set local role authenticated` + `request.jwt.claims` | — |
 
-`withTenant(tenantId)` devolve um objeto com os mesmos métodos do query builder, mas que injeta
-`.eq('tenant_id', tenantId)` em select/update/delete e `tenant_id` em insert. Lint proíbe importar o
-cliente service role fora de `packages/db/src/service.ts`.
+`withTenant(tenantId)` devolve um cliente Supabase normal (tipagem completa), cujo `fetch` é uma guarda
+HTTP (`packages/db/src/tenant-fetch.ts`): acrescenta `tenant_id=eq.<tenant>` em leituras, updates e
+deletes, carimba `tenant_id` em inserts/upserts, injeta `p_tenant_id` em RPC, recusa filtro ou linha de
+outro tenant, tabelas globais, Auth admin e caminhos de Storage fora de `<tenant>/`. A violação nunca
+chega ao banco: vira um 403 local e um log de erro. Consultas que precisam cruzar tenants (resolver o
+tenant pelo `phone_number_id`, listar tenants ativos) são funções nomeadas em `db.system`. O cliente
+service role cru não sai de `packages/db`, e o lint proíbe `@supabase/supabase-js` fora dele e do web.
 
 Invariantes críticas ficam no banco (funções SQL `security invoker`, constraints), não só na API:
 aprovar versão de documento, transições de status de NC, unicidade de `wamid`.

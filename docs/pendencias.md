@@ -37,6 +37,7 @@ configurável por tenant, e a linha fica aqui até ser confirmada.
 | P22 | Provedor de embeddings: OpenAI ou Voyage? | §2 | passo 1.7 | OpenAI `text-embedding-3-small` (como no `.env.example`) |
 | P23 | Hospedagem: provedor da VPS, domínios do painel/API, onde roda o Chatwoot | §2 infra | passo 1.13 | — |
 | P24 | Embarcador recebe o relatório PDF como? (download no painel no MVP) | §5.3 | passo 1.12 | gestor baixa e envia; e-mail automático é ETAPA 2 |
+| P25 | Papéis são hierárquicos (owner > admin > manager > quality > operator > viewer) ou há permissões exclusivas (ex.: só Qualidade aprova POP)? | §4.1 | passos 1.7 e 1.11 | hierárquico: quem está acima herda o de baixo |
 
 ## Decididas
 

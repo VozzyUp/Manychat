@@ -18,8 +18,9 @@ git clone git@github.com:VozzyUp/Manychat.git nurion-hub && cd nurion-hub
 corepack enable
 pnpm install
 cp .env.example .env            # preencha o que for usar; ver tabela abaixo
-supabase start                  # Postgres + Auth + Storage locais (portas 54321/54322)
-docker compose -f infra/docker-compose.yml up -d redis
+pnpm db:start                   # = supabase start: Postgres + Auth + Storage (54321/54322)
+                                # só o banco (mais leve, basta para os testes): pnpm exec supabase db start
+docker compose -f infra/docker-compose.yml up -d redis   # ou um redis-server local
 pnpm db:migrate                 # aplica supabase/migrations
 pnpm db:types                   # gera packages/db/src/database.types.ts
 pnpm test                       # unidade + RLS

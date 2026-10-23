@@ -13,8 +13,10 @@ O escopo exige que um tenant nunca veja dado de outro (§1.5, §4.1) e que isso 
 - Toda tabela de negócio tem `tenant_id not null` e RLS ligado. Policies usam `app.is_member(tenant_id)` e
   `app.has_role(tenant_id, papel)`, funções `security definer` com `search_path = ''`.
 - Painel e API acessam o banco **com o JWT do usuário**: o Postgres aplica RLS em toda query.
-- Worker e webhooks usam service role, mas só por `withTenant(tenantId)`, que injeta o filtro de tenant.
-  O cliente service role cru não é exportado de `packages/db`.
+- Worker e webhooks usam service role, mas só por `withTenant(tenantId)`: um cliente Supabase cujo
+  `fetch` prende toda requisição ao tenant (filtro `tenant_id` em leituras/updates/deletes, `tenant_id`
+  carimbado em inserts, `p_tenant_id` em RPC, Storage só em `<tenant>/`) e recusa o resto com 403 local.
+  Buscas entre tenants são funções nomeadas em `db.system`. O cliente service role cru não é exportado.
 - Teste automático em `supabase/tests`: para cada tabela com `tenant_id`, um usuário do tenant A não lê,
   não altera e não apaga linhas do tenant B; e falha se existir tabela em `public` sem RLS.
 

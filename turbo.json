@@ -21,6 +21,10 @@
     },
     "evals": {
       "cache": false
+    },
+    "@nurion/db#test": {
+      "cache": false,
+      "env": ["DATABASE_URL", "REQUIRE_DB_TESTS"]
     }
   }
 }
