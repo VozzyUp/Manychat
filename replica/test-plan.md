@@ -76,3 +76,13 @@ está automatizado. Cresce a cada passo de construção.
 | S08-H1 | documentos | lista e filtros | coleção, situação, revisão vencida, busca | selos corretos e filtros aplicados; axe ok | e2e | passa |
 | S08-N1 | | leitor | abrir lista e /novo | sem botões de envio | e2e | passa |
 | RLS-doc | documentos | isolamento e guardas | outro tenant; saltos de status; arquivo trocado; ativação | nada vaza; transições inválidas barradas | `packages/db/tests` | passa |
+| F08-H1 | busca | híbrida | vetor + texto em português, RRF | quem aparece nas duas listas vence; acento e flexão não atrapalham | RLS/DB | passa |
+| F08-N1 | | limiar | pergunta fora da base | vazio (força o handoff), mesmo com palavras iguais; limiar ajustável por empresa | DB + core | passa |
+| F08-N2 | | filtros | rascunho, em revisão, ainda processando, obsoleta, outra coleção, outro modelo de embeddings, outra empresa | nada disso aparece | DB + core | passa |
+| F08-H2 | | agente | search → reply com chunk | citação só aceita chunk desta busca; coleções do agente e empresa certas | core (modelo simulado) | passa |
+| F08-N3 | | sem base | busca vazia ou base não configurada | agente chama handoff `no_knowledge`; pergunta vai para S12 | core | passa |
+| F08-N4 | | sem fonte | resposta informativa sem busca | descartada, handoff `no_citation`, vai para S12; urgência não vira lacuna | core | passa |
+| S11-H1 | testar a base | resposta com fonte | pergunta coberta pela base (modelo e embeddings simulados) | resposta com "📄 Fonte", trecho marcado como usado, custo, `ai_runs`/`ai_citations` | API + e2e | passa |
+| S11-N1 | | fora da base | pergunta sem trecho relevante | "Sem resposta", nenhuma fonte inventada | e2e | passa |
+| S11-N2 | | papéis | Qualidade abre a tela; sem IA configurada | só gestor+ testa; 503 claro sem configuração | API + e2e | passa |
+| S12-H1 | perguntas sem resposta | resolver e reabrir | lista, resolver, reabrir; leitor | só Qualidade+ vê; filtros abertas/resolvidas | API + e2e + RLS | passa |

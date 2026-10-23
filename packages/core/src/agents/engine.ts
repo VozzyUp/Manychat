@@ -11,6 +11,7 @@ import type { ModuleRegistry } from '../modules';
 import { GUARDRAILS } from './guardrails';
 import { usageOf, type LlmClient, type ModelNames } from './llm';
 import { addUsage, costUsd, emptyUsage, type Pricing, type Usage } from './pricing';
+import { KnowledgeUnavailableError, type KnowledgeSearch } from '../rag/search';
 import { CORE_TOOLS } from './tools';
 import type {
   AgentContext,
@@ -21,15 +22,25 @@ import type {
   ToolDefinition,
 } from './types';
 
-export type AgentEngineContext = ChannelContext & {
+/** What one run of the model-and-tools loop needs (also used by "Testar a base" in the API). */
+export type AgentRunDeps = {
+  db: ChannelContext['db'];
+  logger: ChannelContext['logger'];
+  now?: ChannelContext['now'];
   llm: LlmClient;
   models: ModelNames;
   pricing: Pricing;
-  registry: ModuleRegistry;
-  enqueueOutbound: EnqueueOutbound;
-  /** Messages of the conversation sent to the model (default 20). */
-  historyLimit?: number;
+  /** Hybrid search over the tenant's approved documents. Without it, agents have no base. */
+  searchKnowledge?: KnowledgeSearch;
 };
+
+export type AgentEngineContext = ChannelContext &
+  AgentRunDeps & {
+    registry: ModuleRegistry;
+    enqueueOutbound: EnqueueOutbound;
+    /** Messages of the conversation sent to the model (default 20). */
+    historyLimit?: number;
+  };
 
 export type RunOutcome = 'answered' | 'handoff' | 'error';
 
@@ -46,7 +57,7 @@ const MAX_TOKENS = 8000;
 const NO_REPLY_NUDGE =
   'Você ainda não respondeu. Use a ferramenta reply para enviar a resposta ao contato ou handoff_to_human para encaminhar a uma pessoa. Texto fora dessas ferramentas não é enviado.';
 
-type ToolCallRecord = {
+export type ToolCallRecord = {
   tool: string;
   args: unknown;
   summary: string;
@@ -204,14 +215,166 @@ async function loadContext(tdb: TenantDb, ctx: AgentEngineContext, input: AgentT
   ]);
   if (contact.error) throw new Error(contact.error.message);
   if (history.error) throw new Error(history.error.message);
-  const settings = (tenant?.settings ?? {}) as { timezone?: unknown };
   return {
     tenantName: tenant?.name ?? '',
-    timezone: typeof settings.timezone === 'string' ? settings.timezone : 'America/Sao_Paulo',
+    timezone: timezoneOf(tenant?.settings),
     contactName: contact.data.name ?? contact.data.profile_name ?? null,
     history: buildHistory([...history.data].reverse()),
   };
 }
+
+function timezoneOf(settings: unknown): string {
+  const tz = (settings as { timezone?: unknown } | null)?.timezone;
+  return typeof tz === 'string' ? tz : 'America/Sao_Paulo';
+}
+
+/** The model-and-tools loop of one run, without any side effect on the conversation. */
+export type LoopResult = {
+  terminal: Terminal;
+  usage: Usage;
+  calls: ToolCallRecord[];
+  turns: number;
+  errorText?: string;
+  retrieved: Map<string, ChunkRef>;
+};
+
+export async function executeAgent(
+  ctx: AgentRunDeps,
+  run: {
+    agent: AgentDefinition;
+    agentContext: AgentContext;
+    history: Anthropic.MessageParam[];
+    toolCtx: Omit<ToolContext, 'retrieved' | 'agent' | 'search'>;
+  },
+): Promise<LoopResult> {
+  const { agent, toolCtx: base } = run;
+  const usage = emptyUsage();
+  const calls: ToolCallRecord[] = [];
+  const retrieved = new Map<string, ChunkRef>();
+  let turns = 0;
+  let errorText: string | undefined;
+  let terminal: Terminal | undefined;
+
+  const search = async (query: string) => {
+    if (!ctx.searchKnowledge) throw new KnowledgeUnavailableError();
+    return ctx.searchKnowledge({
+      tenantId: base.tenantId,
+      conversationId: base.conversationId,
+      query,
+      collections: agent.knowledgeScopes,
+    });
+  };
+  const toolCtx: ToolContext = { ...base, agent, retrieved, search };
+
+  try {
+    const tools = toolsFor(agent);
+    const apiTools = tools.map(apiTool);
+    const system = systemBlocks(agent, run.agentContext);
+    const messages = run.history;
+    let nudged = false;
+
+    while (!terminal) {
+      if (turns >= agent.maxTurns) {
+        terminal = {
+          type: 'handoff',
+          reason: 'max_turns',
+          summary: 'O agente atingiu o limite de passos.',
+        };
+        break;
+      }
+      turns += 1;
+      const response = await ctx.llm.create({
+        model: ctx.models.agent,
+        max_tokens: MAX_TOKENS,
+        system,
+        tools: apiTools,
+        messages,
+      });
+      addUsage(usage, usageOf(response));
+
+      if (response.stop_reason === 'refusal' || response.stop_reason === 'max_tokens') {
+        ctx.logger.warn({ stop_reason: response.stop_reason }, 'model stopped without an answer');
+        errorText = `stop_reason ${response.stop_reason}`;
+        terminal = {
+          type: 'handoff',
+          reason: 'ai_error',
+          summary: 'O modelo não conseguiu responder.',
+        };
+        break;
+      }
+      messages.push({ role: 'assistant', content: response.content });
+      const toolUses = response.content.filter(
+        (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
+      );
+      if (!toolUses.length) {
+        if (nudged) {
+          errorText = 'no reply tool call';
+          terminal = {
+            type: 'handoff',
+            reason: 'ai_error',
+            summary: 'O modelo não usou a ferramenta de resposta.',
+          };
+        } else {
+          nudged = true;
+          messages.push({ role: 'user', content: NO_REPLY_NUDGE });
+        }
+        continue;
+      }
+
+      const alone = toolUses.length === 1;
+      const results: Anthropic.ToolResultBlockParam[] = [];
+      for (const use of toolUses) {
+        // A reply written in the same breath as a search cannot have used its results.
+        const rejected = use.name === 'reply' && !alone;
+        const out = rejected
+          ? {
+              block: {
+                content: JSON.stringify({
+                  error: 'Chame reply sozinha, depois de ver os resultados das outras ferramentas.',
+                }),
+                isError: true,
+              },
+              record: {
+                tool: 'reply',
+                args: use.input,
+                summary: 'rejected: not alone',
+                isError: true,
+                durationMs: 0,
+              },
+              chunks: [] as ChunkRef[],
+              terminal: undefined,
+            }
+          : await runTool(
+              tools.find((t) => t.name === use.name),
+              use.input,
+              toolCtx,
+            );
+        calls.push(out.record);
+        for (const chunk of out.chunks) retrieved.set(chunk.chunkId, chunk);
+        if (out.terminal && !terminal) terminal = out.terminal;
+        results.push({
+          type: 'tool_result',
+          tool_use_id: use.id,
+          content: out.block.content,
+          is_error: out.block.isError || undefined,
+        });
+      }
+      messages.push({ role: 'user', content: results });
+    }
+  } catch (err) {
+    ctx.logger.error({ err, tenant_id: base.tenantId }, 'agent run failed');
+    errorText = err instanceof Error ? err.message : String(err);
+    terminal = {
+      type: 'handoff',
+      reason: 'ai_error',
+      summary: 'Erro técnico ao processar a mensagem.',
+    };
+  }
+  return { terminal: terminal, usage, calls, turns, errorText, retrieved };
+}
+
+export const outcomeOf = (terminal: Terminal): RunOutcome =>
+  terminal.type === 'reply' ? 'answered' : terminal.reason === 'ai_error' ? 'error' : 'handoff';
 
 /**
  * One agent run for a conversation turn (ESCOPO §4.4): context → model with tools → execute tools
@@ -231,154 +394,71 @@ export async function runAgentTurn(
     agent_key: input.agentKey,
   });
   const started = Date.now();
-  const usage = emptyUsage();
-  const calls: ToolCallRecord[] = [];
-  const retrieved = new Map<string, ChunkRef>();
-  let turns = 0;
-  let terminal: Terminal | undefined;
-  let errorText: string | undefined;
-
   const agent = input.agentKey ? ctx.registry.agent(input.agentKey) : undefined;
+
+  let loop: LoopResult;
   if (!agent) {
     log.warn('no agent definition for this conversation: handing off to a human');
-    terminal = {
-      type: 'handoff',
-      reason: 'other',
-      summary: 'Nenhum agente configurado para este caso.',
+    loop = {
+      terminal: {
+        type: 'handoff',
+        reason: 'other',
+        summary: 'Nenhum agente configurado para este caso.',
+      },
+      usage: emptyUsage(),
+      calls: [],
+      turns: 0,
+      retrieved: new Map(),
     };
   } else {
     try {
       const loaded = await loadContext(tdb, ctx, input);
-      const agentContext: AgentContext = {
-        tenantName: loaded.tenantName,
-        contactName: loaded.contactName,
-        contactKind: contactKindSchema.catch('unknown').parse(input.contactKind),
-        module: input.module,
-        timezone: loaded.timezone,
-        now: ctx.now?.() ?? new Date(),
-      };
-      const tools = toolsFor(agent);
-      const apiTools = tools.map(apiTool);
-      const system = systemBlocks(agent, agentContext);
-      const messages = loaded.history;
-      const toolCtx: ToolContext = {
-        tdb,
-        tenantId: input.tenantId,
-        conversationId: input.conversationId,
-        contactId: input.contactId,
-        contactKind: input.contactKind,
-        module: input.module,
+      loop = await executeAgent(ctx, {
         agent,
-        retrieved,
-        logger: log,
-      };
-      let nudged = false;
-
-      while (!terminal) {
-        if (turns >= agent.maxTurns) {
-          terminal = {
-            type: 'handoff',
-            reason: 'max_turns',
-            summary: 'O agente atingiu o limite de passos.',
-          };
-          break;
-        }
-        turns += 1;
-        const response = await ctx.llm.create({
-          model: ctx.models.agent,
-          max_tokens: MAX_TOKENS,
-          system,
-          tools: apiTools,
-          messages,
-        });
-        addUsage(usage, usageOf(response));
-
-        if (response.stop_reason === 'refusal' || response.stop_reason === 'max_tokens') {
-          log.warn({ stop_reason: response.stop_reason }, 'model stopped without an answer');
-          errorText = `stop_reason ${response.stop_reason}`;
-          terminal = {
-            type: 'handoff',
-            reason: 'ai_error',
-            summary: 'O modelo não conseguiu responder.',
-          };
-          break;
-        }
-        messages.push({ role: 'assistant', content: response.content });
-        const toolUses = response.content.filter(
-          (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
-        );
-        if (!toolUses.length) {
-          if (nudged) {
-            errorText = 'no reply tool call';
-            terminal = {
-              type: 'handoff',
-              reason: 'ai_error',
-              summary: 'O modelo não usou a ferramenta de resposta.',
-            };
-          } else {
-            nudged = true;
-            messages.push({ role: 'user', content: NO_REPLY_NUDGE });
-          }
-          continue;
-        }
-
-        const alone = toolUses.length === 1;
-        const results: Anthropic.ToolResultBlockParam[] = [];
-        for (const use of toolUses) {
-          // A reply written in the same breath as a search cannot have used its results.
-          const tool =
-            use.name === 'reply' && !alone ? undefined : tools.find((t) => t.name === use.name);
-          const run =
-            use.name === 'reply' && !alone
-              ? {
-                  block: {
-                    content: JSON.stringify({
-                      error:
-                        'Chame reply sozinha, depois de ver os resultados das outras ferramentas.',
-                    }),
-                    isError: true,
-                  },
-                  record: {
-                    tool: 'reply',
-                    args: use.input,
-                    summary: 'rejected: not alone',
-                    isError: true,
-                    durationMs: 0,
-                  },
-                  chunks: [] as ChunkRef[],
-                  terminal: undefined,
-                }
-              : await runTool(tool, use.input, { ...toolCtx, retrieved });
-          calls.push(run.record);
-          for (const chunk of run.chunks) retrieved.set(chunk.chunkId, chunk);
-          if (run.terminal && !terminal) terminal = run.terminal;
-          results.push({
-            type: 'tool_result',
-            tool_use_id: use.id,
-            content: run.block.content,
-            is_error: run.block.isError || undefined,
-          });
-        }
-        messages.push({ role: 'user', content: results });
-      }
+        agentContext: {
+          tenantName: loaded.tenantName,
+          contactName: loaded.contactName,
+          contactKind: contactKindSchema.catch('unknown').parse(input.contactKind),
+          module: input.module,
+          timezone: loaded.timezone,
+          now: ctx.now?.() ?? new Date(),
+        },
+        history: loaded.history,
+        toolCtx: {
+          tdb,
+          tenantId: input.tenantId,
+          conversationId: input.conversationId,
+          contactId: input.contactId,
+          contactKind: input.contactKind,
+          module: input.module,
+          logger: log,
+        },
+      });
     } catch (err) {
-      log.error({ err }, 'agent run failed');
-      errorText = err instanceof Error ? err.message : String(err);
-      terminal = {
-        type: 'handoff',
-        reason: 'ai_error',
-        summary: 'Erro técnico ao processar a mensagem.',
+      // Loading the context failed (database): same safe ending as a model error.
+      log.error({ err }, 'agent run failed before the loop');
+      loop = {
+        terminal: {
+          type: 'handoff',
+          reason: 'ai_error',
+          summary: 'Erro técnico ao processar a mensagem.',
+        },
+        usage: emptyUsage(),
+        calls: [],
+        turns: 0,
+        errorText: err instanceof Error ? err.message : String(err),
+        retrieved: new Map(),
       };
     }
   }
 
-  if (!terminal) throw new Error('unreachable: run ended without a terminal state');
-  const outcome: RunOutcome =
-    terminal.type === 'reply' ? 'answered' : terminal.reason === 'ai_error' ? 'error' : 'handoff';
-
+  const { terminal, usage, calls, turns, errorText } = loop;
+  const outcome = outcomeOf(terminal);
   const cost = costUsd(ctx.pricing, ctx.models.agent, usage);
   const runId = await recordRun(tdb, {
-    input,
+    conversationId: input.conversationId,
+    messageId: input.messages.at(-1)?.id ?? null,
+    agentKey: input.agentKey ?? 'none',
     model: agent ? ctx.models.agent : 'none',
     usage,
     cost,
@@ -406,6 +486,18 @@ export async function runAgentTurn(
       openedBy: 'ai',
     });
     if (created) {
+      // §4.5: what the base could not answer, for the team to complete the documentation (S12).
+      if (terminal.reason === 'no_knowledge' || terminal.reason === 'no_citation') {
+        await recordGap(tdb, {
+          conversationId: input.conversationId,
+          agentKey: input.agentKey,
+          reason: terminal.reason,
+          question: input.messages
+            .map((m) => m.text ?? '')
+            .filter(Boolean)
+            .join('\n'),
+        });
+      }
       await queueOutboundMessage(tdb, ctx.enqueueOutbound, {
         conversationId: input.conversationId,
         author: 'system',
@@ -425,11 +517,34 @@ export async function runAgentTurn(
   };
 }
 
+export async function recordGap(
+  tdb: TenantDb,
+  gap: {
+    conversationId: string;
+    agentKey: string | null;
+    reason: 'no_knowledge' | 'no_citation';
+    question: string;
+  },
+) {
+  const question = gap.question.trim().slice(0, 1000);
+  if (!question) return;
+  const { error } = await tdb.from('knowledge_gaps').insert({
+    tenant_id: tdb.tenantId,
+    conversation_id: gap.conversationId,
+    agent_key: gap.agentKey,
+    reason: gap.reason,
+    question,
+  });
+  if (error) throw new Error(`record knowledge gap: ${error.message}`);
+}
+
 /** ESCOPO §4.8: ai_runs + ai_tool_calls + ai_citations. */
-async function recordRun(
+export async function recordRun(
   tdb: TenantDb,
   run: {
-    input: AgentTurnInput;
+    conversationId: string | null;
+    messageId: string | null;
+    agentKey: string;
     model: string;
     usage: Usage;
     cost: number;
@@ -446,9 +561,9 @@ async function recordRun(
     .from('ai_runs')
     .insert({
       tenant_id: tdb.tenantId,
-      conversation_id: run.input.conversationId,
-      message_id: run.input.messages.at(-1)?.id ?? null,
-      agent_key: run.input.agentKey ?? 'none',
+      conversation_id: run.conversationId,
+      message_id: run.messageId,
+      agent_key: run.agentKey,
       model: run.model,
       input_tokens: run.usage.inputTokens,
       output_tokens: run.usage.outputTokens,

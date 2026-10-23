@@ -730,6 +730,64 @@ export type Database = {
           },
         ];
       };
+      knowledge_gaps: {
+        Row: {
+          agent_key: string | null;
+          conversation_id: string | null;
+          created_at: string;
+          id: string;
+          question: string;
+          reason: string;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          status: string;
+          tenant_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          agent_key?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          id?: string;
+          question: string;
+          reason: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          status?: string;
+          tenant_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          agent_key?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          id?: string;
+          question?: string;
+          reason?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          status?: string;
+          tenant_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'knowledge_gaps_tenant_id_conversation_id_fkey';
+            columns: ['tenant_id', 'conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'conversations';
+            referencedColumns: ['tenant_id', 'id'];
+          },
+          {
+            foreignKeyName: 'knowledge_gaps_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       message_media: {
         Row: {
           created_at: string;
@@ -1256,6 +1314,32 @@ export type Database = {
           inserted: boolean;
           media_row_id: string;
           message_id: string;
+        }[];
+      };
+      search_knowledge: {
+        Args: {
+          p_collections: string[];
+          p_embedding: string;
+          p_embedding_model: string;
+          p_limit?: number;
+          p_min_score?: number;
+          p_min_similarity?: number;
+          p_query: string;
+          p_tenant_id: string;
+        };
+        Returns: {
+          chunk_id: string;
+          code: string;
+          collection: string;
+          content: string;
+          document_id: string;
+          document_version_id: string;
+          page: number;
+          score: number;
+          section_path: string;
+          similarity: number;
+          title: string;
+          version: number;
         }[];
       };
     };

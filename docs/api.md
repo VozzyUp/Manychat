@@ -200,3 +200,13 @@ tipo é conferido pelos bytes. Todo envio cria um **rascunho**.
 
 Fluxo: `rascunho → em_revisao → aprovado → obsoleto` (e `em_revisao → rascunho` na devolução). Só a versão
 aprovada **e** processada alimenta a IA (`document_versions.activated_at`).
+
+### Base de conhecimento
+
+| rota | corpo | respostas |
+| --- | --- | --- |
+| `POST /v1/knowledge/test` (manager) | `{ "question", "collections"? }` | `200 { outcome, answer, handoff_reason, sources[], cost_usd, turns }` onde cada fonte traz `chunk_id`, título, código, seção, página, versão, relevância, texto e `cited`; `503` se a IA ou os embeddings não estão configurados |
+| `PATCH /v1/knowledge-gaps/:id` (quality) | `{ "status": "open" \| "resolved" }` | `200`; `404` de outra empresa |
+
+O teste usa a mesma busca e a mesma regra de fonte dos agentes, sem WhatsApp, e grava `ai_runs`
+(`knowledge.test`) e `ai_citations`. A API lê `ANTHROPIC_API_KEY`, `LLM_MODEL_*`, `LLM_PRICING` e `EMBEDDINGS_*`.

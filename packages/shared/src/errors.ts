@@ -7,6 +7,7 @@ export type ErrorCode =
   | 'payload_too_large'
   | 'unprocessable'
   | 'rate_limited'
+  | 'unavailable'
   | 'internal_error';
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
@@ -18,6 +19,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   payload_too_large: 413,
   unprocessable: 422,
   rate_limited: 429,
+  unavailable: 503,
   internal_error: 500,
 };
 

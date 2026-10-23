@@ -191,6 +191,11 @@ Busca híbrida numa função SQL: vetorial (cosseno) + full-text em português, 
 limiar. Abaixo do limiar a busca devolve vazio — e vazio obriga o handoff.
 Ver [ADR-0005](adr/0005-busca-hibrida-em-sql.md).
 
+**Na prática (passo 1.8):** o agente chama `search_knowledge(query)`; o código embute a pergunta, filtra por empresa, coleções do
+agente e versão aprovada e processada, funde vetor e texto por RRF e corta pela similaridade mínima. Os trechos voltam com
+`chunk_id`; só esses ids podem ser citados na `reply`. Busca vazia → o agente chama `handoff_to_human` e a pergunta entra em
+"Perguntas sem resposta".
+
 ## Handoff (Chatwoot no MVP)
 
 ```mermaid

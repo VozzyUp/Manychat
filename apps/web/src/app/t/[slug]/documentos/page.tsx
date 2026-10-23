@@ -74,11 +74,23 @@ export default async function DocumentsPage({
         title="Documentos"
         description="POPs, manuais e normas da empresa. Só versões aprovadas e processadas alimentam a IA."
         actions={
-          canCreate ? (
-            <Link href={`/t/${slug}/documentos/novo`} className={buttonClass('primary')}>
-              Novo documento
-            </Link>
-          ) : undefined
+          <div className="flex flex-wrap items-center gap-2">
+            {roleAtLeast(role, 'quality') ? (
+              <Link href={`/t/${slug}/documentos/lacunas`} className={buttonClass('ghost')}>
+                Perguntas sem resposta
+              </Link>
+            ) : null}
+            {roleAtLeast(role, 'manager') ? (
+              <Link href={`/t/${slug}/documentos/testar`} className={buttonClass('secondary')}>
+                Testar a base
+              </Link>
+            ) : null}
+            {canCreate ? (
+              <Link href={`/t/${slug}/documentos/novo`} className={buttonClass('primary')}>
+                Novo documento
+              </Link>
+            ) : null}
+          </div>
         }
       />
       <Form action={`/t/${slug}/documentos`} className="mb-4 flex flex-wrap items-end gap-3">

@@ -43,6 +43,8 @@ configurável por tenant, e a linha fica aqui até ser confirmada.
 | P28 | Quem aprova documento: só Qualidade? Quem enviou pode aprovar o próprio? (segregação de funções) | passo 1.7 | Qualidade ou acima aprova, inclusive o próprio envio |
 | P29 | Provedor de embeddings: OpenAI ou Voyage? (hoje só API compatível com OpenAI, 1536 dimensões) | passo 1.7 | OpenAI `text-embedding-3-small` por env |
 | P30 | PDFs escaneados são comuns nos POPs do cliente? (define a prioridade do OCR) | passo 1.9 | falha com aviso; OCR no passo 1.9 |
+| P31 | Qual a relevância mínima aceitável? O limiar 0,3 foi escolhido sem documentos reais | passo 1.13 (evals) | 0,3 de similaridade; ajuste por empresa em `settings.rag.min_similarity` |
+| P32 | "Perguntas sem resposta" guarda o texto que o contato escreveu: por quanto tempo e quem pode ver? | LGPD | visível para Qualidade ou acima; anonimizar o contato apaga as conversas, mas não esta lista (a definir) |
 
 ## Decididas
 

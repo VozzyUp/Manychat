@@ -25,3 +25,10 @@ calibrados pelos evals.
 
 - Uma ida ao banco por busca; o filtro de tenant e status mora junto da busca.
 - Mudança de limiar ou de RRF roda `pnpm evals` antes do commit (CLAUDE.md).
+
+## Situação (passo 1.8)
+
+Implementado em `public.search_knowledge`. A pergunta vira uma consulta OR das palavras úteis (sem acento; o
+dicionário português tira as palavras vazias). O corte é pela similaridade vetorial mínima (padrão 0,3, ajustável por
+empresa em `settings.rag.min_similarity`); o corte por score RRF existe como parâmetro (padrão 0). Falta calibrar com os
+evals (P31).

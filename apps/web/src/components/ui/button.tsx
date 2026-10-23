@@ -2,10 +2,10 @@ import type { ButtonHTMLAttributes } from 'react';
 import { cn } from './cn';
 
 const variants = {
-  primary: 'bg-accent text-on-accent hover:opacity-90',
+  primary: 'bg-accent text-on-accent hover:brightness-90',
   secondary: 'border border-border bg-bg text-text hover:bg-surface',
   ghost: 'text-text hover:bg-surface-strong',
-  danger: 'bg-danger text-white hover:opacity-90',
+  danger: 'bg-danger text-white hover:brightness-90',
 } as const;
 
 const sizes = {

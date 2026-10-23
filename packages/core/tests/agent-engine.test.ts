@@ -3,18 +3,19 @@ import { createServiceDb } from '@nurion/db';
 import { createTestTenant, findLocalStack, runSql, type LocalStack } from '@nurion/db/testing';
 import { createLogger, createSecretBox } from '@nurion/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { z } from 'zod';
 import {
   createStaffClassifier,
   defineModule,
-  defineTool,
   GUARDRAILS,
+  KnowledgeUnavailableError,
+  testKnowledge,
   ModuleRegistry,
   parsePricing,
   runAgentTurn,
   type AgentDefinition,
   type AgentEngineContext,
   type AgentTurnInput,
+  type ChunkRef,
   type OutboundJob,
 } from '../src';
 import { createFakeLlm, message, text, toolUse } from './fake-llm';
@@ -26,31 +27,22 @@ const digits = (n: number) => Array.from({ length: n }, () => randomInt(10)).joi
 const CHUNK_A = '11111111-1111-4111-8111-111111111111';
 const CHUNK_B = '22222222-2222-4222-8222-222222222222';
 
-/** Stand-in for search_knowledge (step 1.8): returns two citable chunks. */
-const fakeSearch = defineTool({
-  name: 'search_knowledge',
-  description: 'Busca nos documentos',
-  input: z.object({ query: z.string() }),
-  run: async () => ({
-    content: { results: [{ chunk_id: CHUNK_A, text: 'Manter entre 2 e 8 °C.' }] },
-    chunks: [
-      {
-        chunkId: CHUNK_A,
-        title: 'POP-012',
-        section: '4.2',
-        version: '3',
-        documentVersionId: undefined,
-      },
-    ],
-  }),
-  summarize: (args) => `search "${args.query.length}" chars`,
-});
+const searchCalls: { query: string; collections: string[]; tenantId: string }[] = [];
+let searchResult: ChunkRef[] | 'unavailable' = [
+  {
+    chunkId: CHUNK_A,
+    title: 'POP-012',
+    section: '4.2',
+    version: '3',
+    text: 'Manter entre 2 e 8 °C.',
+  },
+];
 
 const agent: AgentDefinition = {
   key: 'test.agent',
   module: 'log',
   systemPrompt: (c) => `Você atende ${c.contactKind} da ${c.tenantName}.`,
-  tools: [fakeSearch],
+  tools: [],
   knowledgeScopes: ['pop'],
   requireCitation: true,
   maxTurns: 4,
@@ -78,6 +70,15 @@ describeStack('agent engine against the local stack (Anthropic mocked)', () => {
         '{"test-model-agent":{"input":2,"output":10,"cache_read":0.2},"test-model-fast":{"input":0.1,"output":0.5}}',
       ),
       registry,
+      searchKnowledge: async (input) => {
+        searchCalls.push({
+          query: input.query,
+          collections: input.collections,
+          tenantId: input.tenantId,
+        });
+        if (searchResult === 'unavailable') throw new KnowledgeUnavailableError();
+        return searchResult;
+      },
       enqueueOutbound: async (job) => void outbound.push(job),
     };
   });
@@ -212,7 +213,7 @@ describeStack('agent engine against the local stack (Anthropic mocked)', () => {
   it('discards an answer that cites a chunk the search did not return and hands off (no_citation)', async () => {
     const t = await setup();
     fake.script(
-      message([toolUse('search_knowledge', { query: 'x' })]),
+      message([toolUse('search_knowledge', { query: 'temperatura' })]),
       message([toolUse('reply', { kind: 'informative', text: 'É 5 °C.', chunk_ids: [CHUNK_B] })]),
     );
     const run = await runAgentTurn(ctx, await t.ask('Qual a temperatura?'));
@@ -245,7 +246,7 @@ describeStack('agent engine against the local stack (Anthropic mocked)', () => {
     const t = await setup();
     fake.script(
       message([
-        toolUse('search_knowledge', { query: 'x' }, 'toolu_s'),
+        toolUse('search_knowledge', { query: 'temperatura' }, 'toolu_s'),
         toolUse('reply', { kind: 'informative', text: 'Chute.', chunk_ids: [CHUNK_A] }, 'toolu_r'),
       ]),
       message([
@@ -294,7 +295,9 @@ describeStack('agent engine against the local stack (Anthropic mocked)', () => {
   it('stops at maxTurns and hands off', async () => {
     const t = await setup();
     fake.script(
-      ...Array.from({ length: 4 }, () => message([toolUse('search_knowledge', { query: 'x' })])),
+      ...Array.from({ length: 4 }, () =>
+        message([toolUse('search_knowledge', { query: 'temperatura' })]),
+      ),
     );
     const run = await runAgentTurn(ctx, await t.ask('?'));
     expect(run).toMatchObject({ outcome: 'handoff', handoffReason: 'max_turns', turns: 4 });
@@ -388,6 +391,153 @@ describeStack('agent engine against the local stack (Anthropic mocked)', () => {
     ).content[0]!.content;
     expect(JSON.parse(toolResult)).toEqual({ name: 'João', kind: 'driver' });
     expect(toolResult).not.toMatch(/\d{10}/); // no phone number
+  });
+
+  it('search_knowledge is scoped to the agent collections and the tenant', async () => {
+    const t = await setup();
+    searchCalls.length = 0;
+    fake.script(
+      message([toolUse('search_knowledge', { query: 'temperatura da vacina' })]),
+      message([
+        toolUse('reply', { kind: 'informative', text: 'Entre 2 e 8 °C.', chunk_ids: [CHUNK_A] }),
+      ]),
+    );
+    await runAgentTurn(ctx, await t.ask('Qual a temperatura?'));
+    expect(searchCalls).toEqual([
+      { query: 'temperatura da vacina', collections: ['pop'], tenantId: t.tenantId },
+    ]);
+  });
+
+  it('an empty search ends in a human handoff and records the unanswered question (S12)', async () => {
+    const t = await setup();
+    const saved = searchResult;
+    searchResult = [];
+    try {
+      fake.script(
+        message([toolUse('search_knowledge', { query: 'prazo de validade do reagente' })]),
+        message([
+          toolUse('handoff_to_human', {
+            reason: 'no_knowledge',
+            summary: 'Sem base sobre reagentes.',
+          }),
+        ]),
+      );
+      const before = fake.calls.length;
+      const run = await runAgentTurn(ctx, await t.ask('Qual o prazo de validade do reagente?'));
+      expect(run).toMatchObject({ outcome: 'handoff', handoffReason: 'no_knowledge' });
+      const result = (fake.calls[before + 1]!.messages.at(-1) as { content: { content: string }[] })
+        .content[0]!.content;
+      expect(JSON.parse(result)).toMatchObject({
+        results: [],
+        note: expect.stringContaining('handoff_to_human'),
+      });
+      const gaps = await runSql<{
+        question: string;
+        reason: string;
+        status: string;
+        agent_key: string;
+      }>(s, `select question, reason, status, agent_key from knowledge_gaps where tenant_id = $1`, [
+        t.tenantId,
+      ]);
+      expect(gaps).toEqual([
+        {
+          question: 'Qual o prazo de validade do reagente?',
+          reason: 'no_knowledge',
+          status: 'open',
+          agent_key: 'test.agent',
+        },
+      ]);
+    } finally {
+      searchResult = saved;
+    }
+  });
+
+  it('a discarded answer (no_citation) is a gap too; a plain handoff for urgency is not', async () => {
+    const t = await setup();
+    fake.script(
+      message([toolUse('reply', { kind: 'informative', text: 'Acho que é 5 °C.', chunk_ids: [] })]),
+    );
+    await runAgentTurn(ctx, await t.ask('Qual a temperatura?'));
+    const gaps = await runSql<{ reason: string }>(
+      s,
+      `select reason from knowledge_gaps where tenant_id = $1`,
+      [t.tenantId],
+    );
+    expect(gaps).toEqual([{ reason: 'no_citation' }]);
+
+    const t2 = await setup();
+    fake.script(message([toolUse('handoff_to_human', { reason: 'urgency', summary: 'Urgente' })]));
+    await runAgentTurn(ctx, await t2.ask('socorro'));
+    expect(
+      await runSql(s, `select 1 from knowledge_gaps where tenant_id = $1`, [t2.tenantId]),
+    ).toHaveLength(0);
+  });
+
+  it('no base configured: the tool says so and the agent hands off instead of guessing', async () => {
+    const t = await setup();
+    const saved = searchResult;
+    searchResult = 'unavailable';
+    try {
+      fake.script(
+        message([toolUse('search_knowledge', { query: 'qualquer coisa' })]),
+        message([
+          toolUse('handoff_to_human', { reason: 'no_knowledge', summary: 'Base indisponível.' }),
+        ]),
+      );
+      const before = fake.calls.length;
+      const run = await runAgentTurn(ctx, await t.ask('Qual a regra?'));
+      expect(run.handoffReason).toBe('no_knowledge');
+      const result = (fake.calls[before + 1]!.messages.at(-1) as { content: { content: string }[] })
+        .content[0]!.content;
+      expect(JSON.parse(result)).toMatchObject({
+        results: [],
+        error: expect.stringContaining('indisponível'),
+      });
+    } finally {
+      searchResult = saved;
+    }
+  });
+
+  it('"Testar a base": same search and citation rule, audited without a conversation', async () => {
+    const t = await setup();
+    searchCalls.length = 0;
+    fake.script(
+      message([toolUse('search_knowledge', { query: 'temperatura da câmara' })]),
+      message([
+        toolUse('reply', { kind: 'informative', text: 'Entre 2 e 8 °C.', chunk_ids: [CHUNK_A] }),
+      ]),
+    );
+    const result = await testKnowledge(ctx, {
+      tenantId: t.tenantId,
+      question: 'Qual a temperatura da câmara?',
+      collections: ['pop', 'receita'],
+    });
+    expect(result).toMatchObject({ outcome: 'answered', turns: 2 });
+    expect(result.answer).toContain('📄 Fonte: POP-012, 4.2 (v3)');
+    expect(result.sources).toEqual([
+      expect.objectContaining({ chunkId: CHUNK_A, cited: true, text: 'Manter entre 2 e 8 °C.' }),
+    ]);
+    expect(searchCalls[0]!.collections).toEqual(['pop']); // unknown collections are dropped
+    const [r] = await runSql<{
+      agent_key: string;
+      conversation_id: string | null;
+      outcome: string;
+    }>(s, `select agent_key, conversation_id, outcome from ai_runs where id = $1`, [result.runId]);
+    expect(r).toEqual({ agent_key: 'knowledge.test', conversation_id: null, outcome: 'answered' });
+    expect(
+      await runSql(s, `select 1 from ai_citations where ai_run_id = $1`, [result.runId]),
+    ).toHaveLength(1);
+    // A test that finds nothing is not recorded as a gap of a conversation.
+    fake.script(message([toolUse('handoff_to_human', { reason: 'no_knowledge', summary: 'x' })]));
+    const none = await testKnowledge(ctx, { tenantId: t.tenantId, question: 'Algo fora da base?' });
+    expect(none).toMatchObject({
+      outcome: 'handoff',
+      handoffReason: 'no_knowledge',
+      answer: undefined,
+    });
+    expect(
+      await runSql(s, `select 1 from knowledge_gaps where tenant_id = $1`, [t.tenantId]),
+    ).toHaveLength(0);
   });
 });
 

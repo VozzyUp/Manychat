@@ -117,3 +117,18 @@ export const INGEST_STATUS_LABELS: Record<string, string> = {
   ready: 'Pronto para a IA',
   failed: 'Falhou',
 };
+
+export const GAP_REASON_LABELS: Record<string, string> = {
+  no_knowledge: 'Nenhum trecho encontrado',
+  no_citation: 'Resposta sem fonte descartada',
+};
+
+export const HANDOFF_TEST_LABELS: Record<string, string> = {
+  no_knowledge: 'A base não cobre esse assunto.',
+  no_citation: 'A resposta não pôde ser sustentada por um trecho da base.',
+  max_turns: 'O agente não conseguiu concluir.',
+  ai_error: 'Erro ao consultar a IA.',
+  urgency: 'O agente tratou como urgência.',
+  user_request: 'O agente encaminhou a uma pessoa.',
+  other: 'O agente encaminhou a uma pessoa.',
+};

@@ -10,6 +10,11 @@ export type ChunkRef = {
   title: string;
   section?: string;
   version?: string;
+  /** Extra detail kept for the panel ("Testar a base"); not needed for the citation line. */
+  code?: string;
+  page?: number;
+  similarity?: number;
+  text?: string;
 };
 
 /** What an agent knows about the situation (system prompt input). */
@@ -26,11 +31,14 @@ export type AgentContext = {
 export type ToolContext = {
   tdb: TenantDb;
   tenantId: string;
-  conversationId: string;
-  contactId: string;
+  /** Null when the run is not part of a conversation (e.g. "Testar a base"). */
+  conversationId: string | null;
+  contactId: string | null;
   contactKind: ContactKind;
   module: ModuleKey;
   agent: AgentDefinition;
+  /** Searches the tenant's base within this agent's collections. Throws if no base is configured. */
+  search: (query: string) => Promise<ChunkRef[]>;
   /** Chunks `search_knowledge` returned in this run: the only ones a reply may cite. */
   retrieved: ReadonlyMap<string, ChunkRef>;
   logger: Logger;

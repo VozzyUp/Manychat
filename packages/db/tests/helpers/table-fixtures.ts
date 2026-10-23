@@ -136,6 +136,11 @@ export const TABLE_FIXTURES: Record<
       [tenantId, doc, version!.id, `[${Array.from({ length: 1536 }, () => 0.01).join(',')}]`],
     );
   },
+  knowledge_gaps: async (db, _world, tenantId) =>
+    db.query(
+      `insert into knowledge_gaps (tenant_id, question, reason) values ($1, 'Qual a temperatura?', 'no_knowledge')`,
+      [tenantId],
+    ),
   audit_log: async (db, _world, tenantId) =>
     db.query(
       `insert into audit_log (tenant_id, action, entity, entity_id) values ($1, 'insert', 'test', $2)`,

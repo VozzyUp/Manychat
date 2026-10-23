@@ -1,4 +1,12 @@
 import {
+  createAnthropicClient,
+  createKnowledgeSearch,
+  createOpenAiEmbeddings,
+  parsePricing,
+  testKnowledge,
+  type KnowledgeTestResult,
+} from '@nurion/core';
+import {
   createAuthVerifier,
   createServiceDb,
   createUserClient,
@@ -29,6 +37,14 @@ export type AppDeps = {
   };
   /** Puts a raw webhook body on the inbound-messages queue (dedup by `jobId`). */
   enqueueInbound: (job: InboundJob, jobId: string) => Promise<void>;
+  /** "Testar a base" (S11); null when the model or the embeddings are not configured. */
+  knowledgeTest:
+    | ((input: {
+        tenantId: string;
+        question: string;
+        collections?: string[];
+      }) => Promise<KnowledgeTestResult>)
+    | null;
   /** Starts the ingestion of an approved document version. */
   enqueueIngest: (job: IngestJob, jobId: string) => Promise<void>;
 };
@@ -38,15 +54,54 @@ export function createDeps(
   logger: Logger,
   queues: Pick<AppDeps, 'enqueueInbound' | 'enqueueIngest'>,
 ): AppDeps {
+  const serviceDb = createServiceDb({
+    url: env.SUPABASE_URL,
+    serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+    onTenantViolation: (error) => logger.error({ err: error }, 'tenant scope violation'),
+  });
+  const pricing = parsePricing(env.LLM_PRICING);
+  const embeddings =
+    env.EMBEDDINGS_API_KEY && env.EMBEDDINGS_MODEL
+      ? createOpenAiEmbeddings({
+          apiKey: env.EMBEDDINGS_API_KEY,
+          model: env.EMBEDDINGS_MODEL,
+          baseUrl: env.EMBEDDINGS_BASE_URL,
+        })
+      : undefined;
+  const knowledgeTest =
+    env.ANTHROPIC_API_KEY &&
+    env.LLM_MODEL_AGENT &&
+    env.LLM_MODEL_FAST &&
+    env.LLM_MODEL_VISION &&
+    embeddings
+      ? (input: { tenantId: string; question: string; collections?: string[] }) =>
+          testKnowledge(
+            {
+              db: serviceDb,
+              logger,
+              llm: createAnthropicClient({ apiKey: env.ANTHROPIC_API_KEY! }),
+              models: {
+                agent: env.LLM_MODEL_AGENT!,
+                fast: env.LLM_MODEL_FAST!,
+                vision: env.LLM_MODEL_VISION!,
+              },
+              pricing,
+              searchKnowledge: createKnowledgeSearch({
+                db: serviceDb,
+                embeddings,
+                pricing,
+                logger,
+              }),
+            },
+            input,
+          )
+      : null;
+
   return {
     verifyToken: createAuthVerifier({ url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }),
     userDb: (accessToken) =>
       createUserClient({ url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY, accessToken }),
-    serviceDb: createServiceDb({
-      url: env.SUPABASE_URL,
-      serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
-      onTenantViolation: (error) => logger.error({ err: error }, 'tenant scope violation'),
-    }),
+    serviceDb,
     webUrl: env.WEB_URL,
     secrets: env.ENCRYPTION_KEY
       ? createSecretBox({ key: env.ENCRYPTION_KEY, previousKey: env.ENCRYPTION_KEY_PREVIOUS })
@@ -58,5 +113,6 @@ export function createDeps(
     },
     enqueueInbound: queues.enqueueInbound,
     enqueueIngest: queues.enqueueIngest,
+    knowledgeTest,
   };
 }

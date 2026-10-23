@@ -15,6 +15,7 @@ Formato da skill replica-test. Só entra o que foi reproduzido.
 | B008 | S3 | S06 cadastro de contato | digitar `12345678x` | "número inválido" | letras eram descartadas e sobravam 8 dígitos aceitos | corrigido (entrada só com dígitos e separadores); teste de unidade e e2e |
 | B009 | S3 | S05 e S07 | encerrar atendimento humano / anonimizar | confirmação visível | o cartão com o formulário some depois da ação e levava a mensagem junto | corrigido (redireciona com a confirmação na página); coberto por S05-H2 e S07-H1 |
 | B010 | S4 | S04 e S06 | abrir a lista | linhas de ponta a ponta | `p-0` não vencia o `p-5` do Card (sem tailwind-merge) | corrigido (`Card flush`) |
+| B011 | S3 | botões primários | passar o mouse sobre "Perguntar" com o axe rodando | contraste ≥ 4,5:1 | `hover:opacity-90` baixava o contraste do texto branco para 4,48:1 | corrigido (`hover:brightness-90`); pego pelo e2e do S11 |
 
 ## A conferir
 

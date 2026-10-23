@@ -8,6 +8,7 @@ export const contactProfileTool = defineTool({
     'Retorna o nome e o tipo (motorista, paciente, equipe) do contato atual. Chame se precisar tratar a pessoa pelo nome.',
   input: z.object({}),
   run: async (_args, ctx) => {
+    if (!ctx.contactId) return { content: { name: null, kind: ctx.contactKind } };
     const { data, error } = await ctx.tdb
       .from('contacts')
       .select('name, profile_name, kind')

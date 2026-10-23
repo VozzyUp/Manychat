@@ -165,12 +165,13 @@ describe('tools', () => {
     } as AgentDefinition;
     expect(() => toolsFor(agent)).toThrow(/duplicate tool reply/);
   });
-  it('every agent gets reply, handoff_to_human and get_contact_profile', () => {
+  it('every agent gets reply, handoff_to_human, get_contact_profile and search_knowledge', () => {
     const agent = { ...({} as AgentDefinition), key: 'x.y', tools: [] };
     expect(toolsFor(agent).map((t) => t.name)).toEqual([
       'reply',
       'handoff_to_human',
       'get_contact_profile',
+      'search_knowledge',
     ]);
   });
 });

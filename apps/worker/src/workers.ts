@@ -1,4 +1,5 @@
 import {
+  createKnowledgeSearch,
   createStaffClassifier,
   DEFAULT_JOB_OPTIONS,
   PermanentJobError,
@@ -79,8 +80,17 @@ export async function startWorkers(setup: WorkerSetup) {
   };
   if (setup.llm) {
     const { client, models, pricing } = setup.llm;
+    const searchKnowledge = createKnowledgeSearch({
+      db: ctx.db,
+      embeddings: setup.embeddings,
+      pricing,
+      logger: ctx.logger,
+    });
     ctx.runAgent = (input) =>
-      runAgentTurn({ ...ctx, llm: client, models, pricing, registry: ctx.registry }, input);
+      runAgentTurn(
+        { ...ctx, llm: client, models, pricing, registry: ctx.registry, searchKnowledge },
+        input,
+      );
     ctx.classifyStaffIntent = createStaffClassifier({
       llm: client,
       model: models.fast,

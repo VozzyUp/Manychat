@@ -34,5 +34,8 @@ export const messages = {
   documentTransition: 'Essa mudança de situação não é permitida.',
   documentApprove: 'Só a Qualidade (ou acima) aprova, devolve ou torna obsoleto um documento.',
   documentReingest: 'Só versões aprovadas com falha ou pendentes podem ser reprocessadas.',
+  knowledgeUnavailable:
+    'A IA ou os embeddings ainda não estão configurados neste ambiente. Peça à Nurion para configurar.',
+  gapMissing: 'Pergunta não encontrada.',
   noOpenHandoff: 'Não há atendimento humano aberto nesta conversa.',
 } as const;

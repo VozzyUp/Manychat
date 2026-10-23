@@ -2,11 +2,17 @@ import type { ToolDefinition } from '../types';
 import { contactProfileTool } from './contact';
 import { handoffTool } from './handoff';
 import { replyTool } from './reply';
+import { searchKnowledgeTool } from './search';
 
-export { contactProfileTool, handoffTool, replyTool };
+export { contactProfileTool, handoffTool, replyTool, searchKnowledgeTool };
 
 /**
- * Tools every agent has. `search_knowledge` joins them in build step 1.8; `create_nonconformity`,
- * `attach_evidence` and `send_template` with the modules that use them.
+ * Tools every agent has. `create_nonconformity`, `attach_evidence` and `send_template` join them
+ * with the modules that use them.
  */
-export const CORE_TOOLS: ToolDefinition[] = [replyTool, handoffTool, contactProfileTool];
+export const CORE_TOOLS: ToolDefinition[] = [
+  replyTool,
+  handoffTool,
+  contactProfileTool,
+  searchKnowledgeTool,
+];
